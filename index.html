@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cricket Fielding Board</title>
+<meta name="description" content="Set up cricket fielding positions, share the setup as a link with view or edit access, and save it as an image.">
+<meta name="theme-color" content="#0b1a13">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%232f7d4f'/%3E%3Ccircle cx='50' cy='50' r='46' fill='none' stroke='white' stroke-width='6'/%3E%3Crect x='42' y='22' width='16' height='56' rx='3' fill='%23cdb98a'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="ball" aria-hidden="true"></span>
+    <span>Cricket Fielding Board</span>
+  </div>
+  <span id="modeBadge" class="badge">Admin</span>
+  <div class="spacer"></div>
+  <button id="btnCopyImage" class="btn ghost" type="button">Copy image</button>
+  <button id="btnExport" class="btn" type="button">Save as image</button>
+  <button id="btnShare" class="btn primary" type="button">Share link</button>
+</header>
+
+<main class="layout">
+  <aside class="sidebar">
+    <section class="card">
+      <h2>Setup</h2>
+      <label class="field">
+        <span>Title</span>
+        <input id="inpTitle" type="text" maxlength="60" placeholder="e.g. Death overs plan">
+      </label>
+      <label class="field">
+        <span>Batting / opposition</span>
+        <input id="inpOpp" type="text" maxlength="40" placeholder="e.g. vs Southbank CC">
+      </label>
+      <div class="field">
+        <span>Batter</span>
+        <div class="segmented" role="group" aria-label="Batting hand">
+          <button type="button" class="seg" data-hand="r">Right hand</button>
+          <button type="button" class="seg" data-hand="l">Left hand</button>
+        </div>
+      </div>
+      <label class="field">
+        <span>Notes</span>
+        <textarea id="inpNotes" rows="2" maxlength="200" placeholder="Bowling plan, field restrictions…"></textarea>
+      </label>
+    </section>
+
+    <section class="card" id="squadCard">
+      <h2>Squad <span id="squadCount" class="count"></span></h2>
+      <div class="admin-only" id="squadAdd">
+        <div class="row">
+          <input id="inpNewPlayer" type="text" maxlength="24" placeholder="Add player name">
+          <button id="btnAddPlayer" class="btn small" type="button">Add</button>
+        </div>
+      </div>
+      <p class="hint" id="squadHint">Tap a player, then tap the ground to place them.</p>
+      <ul id="squadList" class="squad"></ul>
+      <div class="admin-only row wrap">
+        <button id="btnSampleSquad" class="btn small ghost" type="button">Load sample XI</button>
+        <button id="btnClearSquad" class="btn small ghost danger" type="button">Clear squad</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Ready-made fields</h2>
+      <ul id="templateList" class="templates"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Saved on this device</h2>
+      <div class="row">
+        <input id="inpSaveName" type="text" maxlength="40" placeholder="Name this setup">
+        <button id="btnSaveLocal" class="btn small" type="button">Save</button>
+      </div>
+      <ul id="savedList" class="saved"></ul>
+    </section>
+  </aside>
+
+  <section class="board">
+    <div class="boardbar">
+      <div class="row wrap">
+        <button id="btnAuto" class="btn small" type="button">Auto arrange</button>
+        <button id="btnFlip" class="btn small ghost" type="button">Mirror field</button>
+        <button id="btnClearField" class="btn small ghost danger" type="button">Clear field</button>
+      </div>
+      <label class="check">
+        <input id="chkGuides" type="checkbox" checked>
+        <span>Show position guides</span>
+      </label>
+    </div>
+
+    <div id="fieldWrap" class="fieldwrap"></div>
+
+    <div id="selBar" class="selbar" hidden>
+      <span id="selName" class="selname"></span>
+      <div class="row wrap">
+        <button class="btn small" type="button" data-role="k">Wicketkeeper</button>
+        <button class="btn small" type="button" data-role="b">Bowler</button>
+        <button class="btn small" type="button" data-role="f">Fielder</button>
+        <button id="btnRemoveFielder" class="btn small ghost danger" type="button">Take off field</button>
+      </div>
+    </div>
+
+    <div id="statsBar" class="stats"></div>
+    <p id="viewHint" class="hint viewhint" hidden></p>
+  </section>
+</main>
+
+<dialog id="shareDlg" class="dialog">
+  <form method="dialog">
+    <h2>Share this fielding setup</h2>
+    <p class="hint">Every link carries the whole setup inside it, so there is nothing to sign up for. Send the link that matches what the person should be able to do.</p>
+
+    <div class="sharerow">
+      <div>
+        <strong>View only</strong>
+        <span class="hint">They can look at the field and save it as an image.</span>
+      </div>
+      <div class="row">
+        <input id="linkView" type="text" readonly>
+        <button class="btn small" type="button" data-copy="linkView">Copy</button>
+      </div>
+    </div>
+
+    <div class="sharerow">
+      <div>
+        <strong>Can edit</strong>
+        <span class="hint">They can move fielders and change the plan, but cannot change the squad.</span>
+      </div>
+      <div class="row">
+        <input id="linkEdit" type="text" readonly>
+        <button class="btn small" type="button" data-copy="linkEdit">Copy</button>
+      </div>
+    </div>
+
+    <div class="sharerow admin-only">
+      <div>
+        <strong>Admin</strong>
+        <span class="hint">Full control, including the squad list. Keep this one for yourself.</span>
+      </div>
+      <div class="row">
+        <input id="linkAdmin" type="text" readonly>
+        <button class="btn small" type="button" data-copy="linkAdmin">Copy</button>
+      </div>
+    </div>
+
+    <p class="note">Links are open by design: anyone holding a link can pass it on, and a determined
+      recipient could edit the link itself. Use it for teammates, not for secrets.</p>
+
+    <div class="row end">
+      <button class="btn" value="close">Done</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/positions.js"></script>
+<script src="js/state.js"></script>
+<script src="js/field.js"></script>
+<script src="js/export.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
