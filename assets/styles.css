@@ -477,6 +477,12 @@ input:disabled, textarea:disabled {
 body.mode-view .admin-only,
 body.mode-edit .admin-only { display: none !important; }
 
+/* Nothing on the board toolbar does anything on a view-only link. */
+body.mode-view .boardbar { display: none; }
+
+.btn:disabled,
+.seg:disabled { opacity: 0.5; cursor: not-allowed; }
+
 @media (max-width: 980px) {
   .layout { grid-template-columns: 1fr; }
   .sidebar { position: static; max-height: none; overflow: visible; }
