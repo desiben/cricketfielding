@@ -733,34 +733,43 @@
     commit();
   }
 
+  /* The plain address always opens on an empty ground: whoever follows it must
+     never be shown a team they have nothing to do with. A board kept in this
+     browser is offered, never restored on its own, and nothing is written back
+     to storage until the visitor changes something. */
+  function offerLastBoard() {
+    const saved = loadCurrent();
+    if (!saved || (!saved.squad.length && !saved.fielders.length)) return;
+    const bar = $('resumeBar');
+    const what = saved.squad.length
+      ? '"' + (saved.title || 'Fielding setup') + '" with ' + saved.squad.length + ' players'
+      : '"' + (saved.title || 'Fielding setup') + '"';
+    $('resumeText').textContent = 'You last worked on ' + what + ' in this browser.';
+    bar.hidden = false;
+
+    $('btnResume').onclick = function () {
+      state = saved;
+      mode = MODES.ADMIN;
+      selectedPlayerId = null;
+      selectedFielderIndex = -1;
+      bar.hidden = true;
+      persist();
+      syncInputs();
+      render();
+    };
+    $('btnDismissResume').onclick = function () { bar.hidden = true; };
+  }
+
   function start() {
     bindEvents();
     renderTemplates();
     if (!loadFromHash()) {
-      const saved = loadCurrent();
-      state = saved || sampleState();
+      state = defaultState();
       mode = MODES.ADMIN;
-      if (!saved) applyTemplateSilently(TEMPLATES[1]);
+      offerLastBoard();
     }
     syncInputs();
     render();
-    persist();
-  }
-
-  function applyTemplateSilently(template) {
-    const spots = positionsFor(state.hand);
-    const players = state.squad.slice(0, MAX_ON_FIELD);
-    state.fielders = [];
-    template.positions.slice(0, players.length).forEach(function (posId, i) {
-      const spot = spots.find(function (s) { return s.id === posId; });
-      if (!spot) return;
-      state.fielders.push({
-        pid: players[i].id,
-        x: spot.x,
-        y: spot.y,
-        role: posId === 'keeper' ? 'k' : posId === 'bowlerend' ? 'b' : 'f',
-      });
-    });
   }
 
   document.addEventListener('DOMContentLoaded', start);

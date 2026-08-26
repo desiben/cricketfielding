@@ -34,6 +34,15 @@ static files on any host.
   browser supports it.
 - **Save on this device** — keep several named setups in the browser you use.
 
+## What people see at the plain address
+
+`https://<user>.github.io/cricketfielding/` — the address with no link fragment —
+always opens on an empty ground. Nobody following it lands on somebody else's
+team. A board you were working on is kept in your own browser and offered back to
+you on a bar above the ground, but it is never restored on its own, and nothing
+is written to storage until you change something. A shared link, which carries a
+setup in its fragment, opens straight into that setup as you would expect.
+
 ## Sharing and permissions
 
 `Share link` gives you three links to the same setup:

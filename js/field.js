@@ -403,6 +403,17 @@ function renderField(container, state, opts) {
   drawGround(svg, state);
   if (o.showGuides && o.canEdit) drawGuides(svg, state);
   drawFielders(svg, state, o.selectedIndex);
+  if (!state.fielders.length && o.canEdit) {
+    const hint = labelText(FIELD.CX, FIELD.CY + 300,
+      state.squad.length
+        ? 'Tap a player in the squad, then tap the ground to place them.'
+        : 'Add your players in the squad panel, then tap the ground to place them.',
+      17, '600', 'middle', 'rgba(255,255,255,0.6)');
+    hint.setAttribute('data-noexport', '1');
+    hint.setAttribute('pointer-events', 'none');
+    svg.appendChild(hint);
+  }
+
   drawHeader(svg, state, stats);
   drawFooter(svg, state, stats);
 
