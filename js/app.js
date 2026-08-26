@@ -19,6 +19,7 @@
   let selectedFielderIndex = -1;
   let showGuides = false;
   let suppressHash = false;
+  let themeChoice = 'auto';   // 'auto' follows the device, or 'light' / 'dark'
 
   const $ = function (id) { return document.getElementById(id); };
 
@@ -62,6 +63,45 @@
 
   function renumberSquad() {
     state.squad.forEach(function (p, i) { p.num = i + 1; });
+  }
+
+  /* ---------------------------------------------------------------- theming */
+
+  const THEME_KEY = 'cf.theme';
+  // Words, not symbols: a glyph that a device lacks a font for reads as junk.
+  const THEME_LABEL = { auto: 'Theme: Auto', light: 'Theme: Light', dark: 'Theme: Dark' };
+
+  function prefersLight() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches);
+  }
+
+  function resolvedTheme() {
+    if (themeChoice === 'light' || themeChoice === 'dark') return themeChoice;
+    return prefersLight() ? 'light' : 'dark';
+  }
+
+  function applyTheme(redraw) {
+    const theme = resolvedTheme();
+    document.documentElement.dataset.theme = theme;
+    setFieldTheme(theme);
+    const btn = $('btnTheme');
+    btn.textContent = THEME_LABEL[themeChoice];
+    btn.title = themeChoice === 'auto'
+      ? 'Following your device (' + theme + '). Click for light.'
+      : 'Theme: ' + themeChoice + '. Click to change.';
+    if (redraw) renderBoard();
+  }
+
+  function startTheme() {
+    const stored = safeGet(THEME_KEY);
+    if (stored === 'light' || stored === 'dark' || stored === 'auto') themeChoice = stored;
+    applyTheme(false);
+    if (window.matchMedia) {
+      const query = window.matchMedia('(prefers-color-scheme: light)');
+      const onChange = function () { if (themeChoice === 'auto') applyTheme(true); };
+      if (query.addEventListener) query.addEventListener('change', onChange);
+      else if (query.addListener) query.addListener(onChange);
+    }
   }
 
   /* ------------------------------------------------------------ persistence */
@@ -688,6 +728,13 @@
       toast('Saved "' + name + '" to this browser.');
     });
 
+    $('btnTheme').addEventListener('click', function () {
+      const order = ['auto', 'light', 'dark'];
+      themeChoice = order[(order.indexOf(themeChoice) + 1) % order.length];
+      safeSet(THEME_KEY, themeChoice);
+      applyTheme(true);
+    });
+
     $('btnShare').addEventListener('click', openShare);
 
     $('shareDlg').addEventListener('click', function (evt) {
@@ -772,6 +819,7 @@
 
   function start() {
     bindEvents();
+    startTheme();
     renderTemplates();
     if (!loadFromHash()) {
       state = defaultState();

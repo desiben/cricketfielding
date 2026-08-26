@@ -34,6 +34,10 @@ static files on any host.
   side (a no-ball in limited-overs cricket). Anyone on the line down the middle of
   the pitch — the keeper and the bowler, normally — belongs to neither side and is
   left out of those counts.
+- **Dark and light** — the whole page has both, the ground included: floodlit at
+  night, daylight by day. It follows your device by default; the button in the top
+  bar cycles Auto → Light → Dark and remembers what you chose. The saved image
+  comes out in whichever theme you are looking at.
 - **Save as image** — a PNG of the ground, with the title, names, positions and
   the counts. `Copy image` puts the same picture on the clipboard where the
   browser supports it.

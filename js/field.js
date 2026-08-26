@@ -26,31 +26,89 @@ const ORIENTATION_NOTE = {
 };
 
 const FONT = 'ui-sans-serif, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
-const COLORS = {
-  bg: '#0b1a13',
-  grass: '#2f7d4f',
-  grassAlt: '#338755',
-  ring: '#ffffff',
-  pitch: '#cdb98a',
-  pitchEdge: '#b8a274',
-  fielder: '#f8fafc',
-  keeper: '#f59e0b',
-  bowler: '#ef4444',
-  chipText: '#0b1a13',
-  label: '#ffffff',
-  labelHalo: '#0b3b26',
-  muted: '#9fd3b6',
-  grassOuter: '#276b43',
-  boards: '#dbe4dd',
-  concourse: '#0a1c15',
-  standLower: '#24485c',
-  standUpper: '#1b3646',
-  standRoof: '#132734',
-  seat: 'rgba(255,255,255,0.09)',
-  tower: '#3b5a6b',
-  lamp: '#f2f7f4',
-  screen: '#eef2ef',
+/* Two palettes. The interface theme picks one; nothing else about the drawing
+   changes, so a setup looks the same in either, lit differently. */
+const PALETTES = {
+  dark: {
+    page: '#050c09',
+    skyInner: '#0f2a1d',
+    skyOuter: '#050c09',
+    bg: '#0b1a13',
+    grass: '#2f7d4f',
+    grassAlt: '#338755',
+    grassOuter: '#276b43',
+    square: '#4f8f63',
+    ring: '#ffffff',
+    pitch: '#cdb98a',
+    pitchEdge: '#b8a274',
+    fielder: '#f8fafc',
+    keeper: '#f59e0b',
+    bowler: '#ef4444',
+    chipText: '#0b1a13',
+    chipEdge: '#0b1a13',
+    label: '#ffffff',
+    labelHalo: '#0b3b26',
+    headline: '#ffffff',
+    muted: '#9fd3b6',
+    sideMark: 'rgba(255,255,255,0.45)',
+    roleTag: '#fde68a',
+    boards: '#dbe4dd',
+    concourse: '#0a1c15',
+    standLower: '#24485c',
+    standUpper: '#1b3646',
+    standRoof: '#132734',
+    seat: 'rgba(255,255,255,0.09)',
+    tower: '#3b5a6b',
+    lamp: '#f2f7f4',
+    screen: '#eef2ef',
+    screenEdge: '#b9c6bd',
+    batter: '#111827',
+    hintText: 'rgba(255,255,255,0.6)',
+  },
+  light: {
+    page: '#eef3ee',
+    skyInner: '#fbfdfa',
+    skyOuter: '#dde7de',
+    bg: '#eef3ee',
+    grass: '#3f9a63',
+    grassAlt: '#49a66e',
+    grassOuter: '#378856',
+    square: '#5aa877',
+    ring: '#ffffff',
+    pitch: '#dcc79a',
+    pitchEdge: '#c3ad82',
+    fielder: '#ffffff',
+    keeper: '#e08703',
+    bowler: '#d92d2d',
+    chipText: '#10231a',
+    chipEdge: '#14392a',
+    label: '#ffffff',
+    labelHalo: '#1d5236',
+    headline: '#10231a',
+    muted: '#5c7466',
+    sideMark: 'rgba(255,255,255,0.6)',
+    roleTag: '#ffd166',
+    boards: '#ffffff',
+    concourse: '#c6d2c8',
+    standLower: '#8fa9b8',
+    standUpper: '#7793a4',
+    standRoof: '#5f7d8e',
+    seat: 'rgba(255,255,255,0.35)',
+    tower: '#93aab7',
+    lamp: '#ffffff',
+    screen: '#ffffff',
+    screenEdge: '#c3cec6',
+    batter: '#1f2937',
+    hintText: 'rgba(16,35,26,0.55)',
+  },
 };
+
+const COLORS = Object.assign({}, PALETTES.dark);
+
+/* Called by the interface when the theme changes; the next draw picks it up. */
+function setFieldTheme(name) {
+  Object.assign(COLORS, PALETTES[name] || PALETTES.dark);
+}
 
 /* Everything beyond the rope: the strip of outfield outside the boundary, the
    advertising boards, two tiers of seating and the floodlights. It is scenery,
@@ -87,7 +145,7 @@ function drawStadium(svg) {
       y1: FIELD.CY + Math.sin(rad) * (R + 43),
       x2: FIELD.CX + Math.cos(rad) * (R + 113),
       y2: FIELD.CY + Math.sin(rad) * (R + 113),
-      stroke: '#0a1c15', 'stroke-width': 3,
+      stroke: COLORS.concourse, 'stroke-width': 3,
     }));
   }
   svg.appendChild(aisles);
@@ -190,8 +248,8 @@ function drawGround(svg, state) {
   defs.appendChild(clip);
 
   const glow = svgEl('radialGradient', { id: 'nightAir', cx: '50%', cy: '50%', r: '68%' });
-  glow.appendChild(svgEl('stop', { offset: '0%', 'stop-color': '#0f2a1d' }));
-  glow.appendChild(svgEl('stop', { offset: '100%', 'stop-color': '#050c09' }));
+  glow.appendChild(svgEl('stop', { offset: '0%', 'stop-color': COLORS.skyInner }));
+  glow.appendChild(svgEl('stop', { offset: '100%', 'stop-color': COLORS.skyOuter }));
   defs.appendChild(glow);
   svg.appendChild(defs);
 
@@ -241,7 +299,7 @@ function drawGround(svg, state) {
   [FIELD.CY - (FIELD.R + 18), FIELD.CY + (FIELD.R + 18)].forEach(function (y) {
     pitchArea.appendChild(svgEl('rect', {
       x: FIELD.CX - 88, y: y - 11, width: 176, height: 22, rx: 3,
-      fill: COLORS.screen, stroke: '#b9c6bd', 'stroke-width': 1.5,
+      fill: COLORS.screen, stroke: COLORS.screenEdge, 'stroke-width': 1.5,
     }));
   });
 
@@ -249,7 +307,7 @@ function drawGround(svg, state) {
   pitchArea.appendChild(svgEl('rect', {
     x: FIELD.CX - 62, y: FIELD.BOWLER_Y - 40, width: 124,
     height: (FIELD.STRIKER_Y - FIELD.BOWLER_Y) + 80,
-    fill: '#4f8f63', opacity: '0.75', rx: 4,
+    fill: COLORS.square, opacity: '0.75', rx: 4,
   }));
   pitchArea.appendChild(svgEl('rect', {
     x: FIELD.CX - 18, y: FIELD.BOWLER_Y - 22, width: 36,
@@ -262,13 +320,13 @@ function drawGround(svg, state) {
     const cy = y === FIELD.STRIKER_Y ? y - 12 : y + 12;
     pitchArea.appendChild(svgEl('line', {
       x1: FIELD.CX - 17, y1: cy, x2: FIELD.CX + 17, y2: cy,
-      stroke: '#ffffff', 'stroke-width': 1.6, opacity: '0.9',
+      stroke: COLORS.ring, 'stroke-width': 1.6, opacity: '0.9',
     }));
     // Stumps.
     for (let i = -1; i <= 1; i++) {
       pitchArea.appendChild(svgEl('line', {
         x1: FIELD.CX + i * 5, y1: y - 5, x2: FIELD.CX + i * 5, y2: y + 5,
-        stroke: '#f8fafc', 'stroke-width': 2.4, 'stroke-linecap': 'round',
+        stroke: COLORS.fielder, 'stroke-width': 2.4, 'stroke-linecap': 'round',
       }));
     }
   });
@@ -292,33 +350,33 @@ function drawGround(svg, state) {
 
   svg.appendChild(svgEl('circle', {
     cx: body.x, cy: body.y, r: 9,
-    fill: '#111827', stroke: '#ffffff', 'stroke-width': 2,
+    fill: COLORS.batter, stroke: COLORS.ring, 'stroke-width': 2,
   }));
   svg.appendChild(svgEl('line', {
     x1: batFrom.x, y1: batFrom.y, x2: batTo.x, y2: batTo.y,
-    stroke: '#f8fafc', 'stroke-width': 3, 'stroke-linecap': 'round',
+    stroke: COLORS.fielder, 'stroke-width': 3, 'stroke-linecap': 'round',
   }));
   svg.appendChild(haloLabel(handLabel.x, handLabel.y + 5,
     state.hand === 'r' ? 'RHB' : 'LHB', 15, '700'));
 
   svg.appendChild(svgEl('circle', {
     cx: nonStriker.x, cy: nonStriker.y, r: 8,
-    fill: '#111827', stroke: '#ffffff', 'stroke-width': 2, opacity: '0.85',
+    fill: COLORS.batter, stroke: COLORS.ring, 'stroke-width': 2, opacity: '0.85',
   }));
 
   // Off / leg side hints, which follow the ground around as it turns.
   const edge = FIELD.R - 60;
   const off = at(FIELD.CX + (offIsLeft ? -edge : edge), FIELD.CY);
   const leg = at(FIELD.CX + (offIsLeft ? edge : -edge), FIELD.CY);
-  svg.appendChild(labelText(off.x, off.y + 6, 'OFF SIDE', 16, '700', 'middle', 'rgba(255,255,255,0.45)'));
-  svg.appendChild(labelText(leg.x, leg.y + 6, 'LEG SIDE', 16, '700', 'middle', 'rgba(255,255,255,0.45)'));
+  svg.appendChild(labelText(off.x, off.y + 6, 'OFF SIDE', 16, '700', 'middle', COLORS.sideMark));
+  svg.appendChild(labelText(leg.x, leg.y + 6, 'LEG SIDE', 16, '700', 'middle', COLORS.sideMark));
 }
 
 function drawHeader(svg, state, stats) {
   const left = FIELD.VIEW.X + 40;
   const right = FIELD.VIEW.X + FIELD.VIEW.W - 40;
   const top = FIELD.VIEW.Y + 46;
-  svg.appendChild(labelText(left, top, state.title || 'Fielding setup', 30, '800', 'start'));
+  svg.appendChild(labelText(left, top, state.title || 'Fielding setup', 30, '800', 'start', COLORS.headline || COLORS.label));
   const sub = [];
   if (state.bowlingTo) sub.push(state.bowlingTo);
   sub.push(state.hand === 'r' ? 'Right-hand batter' : 'Left-hand batter');
@@ -351,7 +409,7 @@ function drawFooter(svg, state, stats) {
   svg.appendChild(labelText(right, y, summary, 16, '600', 'end', COLORS.muted));
 
   if (state.notes) {
-    svg.appendChild(labelText(left, y + 28, state.notes.slice(0, 110), 15, '500', 'start', 'rgba(255,255,255,0.45)'));
+    svg.appendChild(labelText(left, y + 28, state.notes.slice(0, 110), 15, '500', 'start', COLORS.muted));
   }
 }
 
@@ -450,7 +508,7 @@ function drawFielders(svg, state, selectedIndex) {
     }
 
     g.appendChild(svgEl('circle', {
-      r: 20, fill: fill, stroke: '#0b1a13', 'stroke-width': 2.5,
+      r: 20, fill: fill, stroke: COLORS.chipEdge, 'stroke-width': 2.5,
     }));
     g.appendChild(labelText(0, 6, d.num || initials(d.name), 16, '800', 'middle', COLORS.chipText));
 
@@ -472,8 +530,13 @@ function drawFielders(svg, state, selectedIndex) {
         x1: d.at.x - 26, y1: d.at.y + slot.role[1] - 13,
         x2: d.at.x + 26, y2: d.at.y + slot.role[1] + 5,
       });
+      // Haloed like the names, so the tag reads on grass of any brightness.
       const roleLabel = labelText(slot.role[0], slot.role[1], f.role === 'k' ? 'WK' : 'BOWL',
-        12.5, '800', 'middle', '#fde68a');
+        12.5, '800', 'middle', COLORS.roleTag);
+      roleLabel.setAttribute('stroke', COLORS.labelHalo);
+      roleLabel.setAttribute('stroke-width', '3');
+      roleLabel.setAttribute('stroke-linejoin', 'round');
+      roleLabel.setAttribute('paint-order', 'stroke');
       roleLabel.setAttribute('pointer-events', 'none');
       g.appendChild(roleLabel);
     }
@@ -519,7 +582,7 @@ function renderField(container, state, opts) {
       state.squad.length
         ? 'Tap a player in the squad, then tap the ground to place them.'
         : 'Add your players in the squad panel, then tap the ground to place them.',
-      17, '600', 'middle', 'rgba(255,255,255,0.6)');
+      17, '600', 'middle', COLORS.hintText);
     hint.setAttribute('data-noexport', '1');
     hint.setAttribute('pointer-events', 'none');
     svg.appendChild(hint);
