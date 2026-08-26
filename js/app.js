@@ -37,7 +37,7 @@
     if (!fielder) return;
     const player = playerById(fielder.pid);
     const who = player ? player.name : 'Fielder';
-    const position = nearestPositionName(fielder.x, fielder.y, state.hand);
+    const position = nameAt(state, fielder.x, fielder.y);
     if (position === 'Wicketkeeper') toast(who + ' is keeping wicket.');
     else if (position === 'Bowler') toast(who + " is at the bowler's end.");
     else toast(who + ' is at ' + position.toLowerCase() + '.');
@@ -89,7 +89,7 @@
   }
 
   function roleForSpot(x, y) {
-    const name = nearestPositionName(x, y, state.hand);
+    const name = nameAt(state, x, y);
     const hasKeeper = state.fielders.some(function (f) { return f.role === 'k'; });
     const hasBowler = state.fielders.some(function (f) { return f.role === 'b'; });
     if (name === 'Wicketkeeper' && !hasKeeper) return 'k';
@@ -139,7 +139,7 @@
   }
 
   function freeSpotFor(index) {
-    const spots = positionsFor(state.hand);
+    const spots = positionsFor(state.hand, state.end);
     const taken = state.fielders.map(function (f) { return { x: f.x, y: f.y }; });
     const order = AUTO_ORDER.concat(spots.map(function (s) { return s.id; }));
     for (let i = 0; i < order.length; i++) {
@@ -187,7 +187,7 @@
       toast(isAdmin() ? 'Add players to the squad first.' : 'The squad is empty.');
       return;
     }
-    const spots = positionsFor(state.hand);
+    const spots = positionsFor(state.hand, state.end);
     const players = state.squad.slice(0, MAX_ON_FIELD);
     state.fielders = [];
     template.positions.slice(0, players.length).forEach(function (posId, i) {
@@ -277,6 +277,7 @@
     $('btnAuto').disabled = !canEdit();
     $('btnFlip').disabled = !canEdit();
     $('btnRotate').disabled = !canEdit();
+    $('btnSwitchEnds').disabled = !canEdit();
     $('btnClearField').disabled = !canEdit();
     $('squadHint').textContent = canEdit()
       ? 'Tap a player, then tap the ground to place them. Drag any fielder to move.'
@@ -335,7 +336,7 @@
         const tag = document.createElement('span');
         tag.className = 'ptag';
         tag.textContent = fielder.role === 'k' ? 'WK' : fielder.role === 'b' ? 'Bowl'
-          : nearestPositionName(fielder.x, fielder.y, state.hand);
+          : nameAt(state, fielder.x, fielder.y);
         li.appendChild(tag);
       }
 
@@ -488,7 +489,7 @@
     bar.hidden = false;
     const player = playerById(fielder.pid);
     $('selName').textContent = (player ? player.name : 'Fielder') + ' — ' +
-      nearestPositionName(fielder.x, fielder.y, state.hand);
+      nameAt(state, fielder.x, fielder.y);
     bar.querySelectorAll('[data-role]').forEach(function (btn) {
       btn.classList.toggle('primary', btn.dataset.role === fielder.role);
     });
@@ -503,7 +504,7 @@
         const fielder = state.fielders[index];
         const player = fielder ? playerById(fielder.pid) : null;
         showReadout((player ? player.name : 'Fielder') + ' → ' +
-          nearestPositionName(x, y, state.hand));
+          nameAt(state, x, y));
       },
       onMove: function (index, x, y) {
         const fielder = state.fielders[index];
@@ -636,6 +637,15 @@
       if (!canEdit()) return;
       state.fielders.forEach(function (f) { f.x = 2 * FIELD.CX - f.x; });
       commit();
+    });
+
+    $('btnSwitchEnds').addEventListener('click', function () {
+      if (!canEdit()) return;
+      state.end = !state.end;
+      commit();
+      toast(state.end
+        ? 'Batting from the far end — off and leg have swapped.'
+        : 'Batting from the near end again.');
     });
 
     $('btnRotate').addEventListener('click', function () {

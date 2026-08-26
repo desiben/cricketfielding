@@ -40,7 +40,86 @@ const COLORS = {
   label: '#ffffff',
   labelHalo: '#0b3b26',
   muted: '#9fd3b6',
+  grassOuter: '#276b43',
+  boards: '#dbe4dd',
+  concourse: '#0a1c15',
+  standLower: '#24485c',
+  standUpper: '#1b3646',
+  standRoof: '#132734',
+  seat: 'rgba(255,255,255,0.09)',
+  tower: '#3b5a6b',
+  lamp: '#f2f7f4',
+  screen: '#eef2ef',
 };
+
+/* Everything beyond the rope: the strip of outfield outside the boundary, the
+   advertising boards, two tiers of seating and the floodlights. It is scenery,
+   so it is drawn once around the fixed playing area and never affects where a
+   fielder stands. */
+function drawStadium(svg) {
+  const ring = function (r, width, stroke, dash, opacity) {
+    const c = svgEl('circle', {
+      cx: FIELD.CX, cy: FIELD.CY, r: r,
+      fill: 'none', stroke: stroke, 'stroke-width': width,
+    });
+    if (dash) c.setAttribute('stroke-dasharray', dash);
+    if (opacity) c.setAttribute('opacity', opacity);
+    svg.appendChild(c);
+    return c;
+  };
+
+  const R = FIELD.R;
+
+  // Roof edge, then the two tiers, drawn from the outside in.
+  ring(R + 116, 8, COLORS.standRoof);
+  ring(R + 96, 34, COLORS.standUpper);
+  ring(R + 96, 34, COLORS.seat, '5 7');
+  ring(R + 76, 6, COLORS.concourse);
+  ring(R + 58, 30, COLORS.standLower);
+  ring(R + 58, 30, COLORS.seat, '5 7');
+
+  // Aisles between the blocks of seating.
+  const aisles = svgEl('g', { opacity: '0.5' });
+  for (let a = 0; a < 360; a += 15) {
+    const rad = (a * Math.PI) / 180;
+    aisles.appendChild(svgEl('line', {
+      x1: FIELD.CX + Math.cos(rad) * (R + 43),
+      y1: FIELD.CY + Math.sin(rad) * (R + 43),
+      x2: FIELD.CX + Math.cos(rad) * (R + 113),
+      y2: FIELD.CY + Math.sin(rad) * (R + 113),
+      stroke: '#0a1c15', 'stroke-width': 3,
+    }));
+  }
+  svg.appendChild(aisles);
+
+  // Concourse, boards and the grass between the boards and the rope.
+  ring(R + 40, 12, COLORS.concourse);
+  ring(R + 34, 7, COLORS.boards, '30 9', '0.8');
+  svg.appendChild(svgEl('circle', {
+    cx: FIELD.CX, cy: FIELD.CY, r: R + 30, fill: COLORS.grassOuter,
+  }));
+
+  // Floodlights on the four diagonals.
+  [45, 135, 225, 315].forEach(function (a) {
+    const rad = (a * Math.PI) / 180;
+    const x = FIELD.CX + Math.cos(rad) * (R + 128);
+    const y = FIELD.CY + Math.sin(rad) * (R + 128);
+    const tower = svgEl('g', { transform: 'rotate(' + (a + 90) + ' ' + x + ' ' + y + ')' });
+    tower.appendChild(svgEl('circle', {
+      cx: x, cy: y, r: 34, fill: COLORS.lamp, opacity: '0.07',
+    }));
+    tower.appendChild(svgEl('rect', {
+      x: x - 26, y: y - 9, width: 52, height: 18, rx: 4,
+      fill: COLORS.tower, stroke: COLORS.standRoof, 'stroke-width': 2,
+    }));
+    for (let i = -2; i <= 2; i++) {
+      tower.appendChild(svgEl('circle', {
+        cx: x + i * 10, cy: y, r: 3.2, fill: COLORS.lamp, opacity: '0.9',
+      }));
+    }
+    svg.appendChild(tower);
+  });
+}
 
 /* Fielder coordinates are always stored with the batter at the bottom of the
    ground. A setup can be turned in quarter turns for drawing only: the boundary
@@ -109,9 +188,19 @@ function drawGround(svg, state) {
   const clip = svgEl('clipPath', { id: 'groundClip' });
   clip.appendChild(svgEl('circle', { cx: FIELD.CX, cy: FIELD.CY, r: FIELD.R }));
   defs.appendChild(clip);
+
+  const glow = svgEl('radialGradient', { id: 'nightAir', cx: '50%', cy: '50%', r: '68%' });
+  glow.appendChild(svgEl('stop', { offset: '0%', 'stop-color': '#0f2a1d' }));
+  glow.appendChild(svgEl('stop', { offset: '100%', 'stop-color': '#050c09' }));
+  defs.appendChild(glow);
   svg.appendChild(defs);
 
-  svg.appendChild(svgEl('rect', { x: 0, y: 0, width: FIELD.W, height: FIELD.H, fill: COLORS.bg }));
+  svg.appendChild(svgEl('rect', {
+    x: FIELD.VIEW.X, y: FIELD.VIEW.Y, width: FIELD.VIEW.W, height: FIELD.VIEW.H,
+    fill: 'url(#nightAir)',
+  }));
+
+  drawStadium(svg);
 
   // Outfield with mown stripes.
   svg.appendChild(svgEl('circle', { cx: FIELD.CX, cy: FIELD.CY, r: FIELD.R, fill: COLORS.grass }));
@@ -147,6 +236,15 @@ function drawGround(svg, state) {
     'stroke-dasharray': '12 10', opacity: '0.85',
   }));
 
+  // A sightscreen sits beyond the rope at each end, in line with the pitch, so
+  // both belong to the part of the drawing that turns with it.
+  [FIELD.CY - (FIELD.R + 18), FIELD.CY + (FIELD.R + 18)].forEach(function (y) {
+    pitchArea.appendChild(svgEl('rect', {
+      x: FIELD.CX - 88, y: y - 11, width: 176, height: 22, rx: 3,
+      fill: COLORS.screen, stroke: '#b9c6bd', 'stroke-width': 1.5,
+    }));
+  });
+
   // Square and pitch.
   pitchArea.appendChild(svgEl('rect', {
     x: FIELD.CX - 62, y: FIELD.BOWLER_Y - 40, width: 124,
@@ -179,13 +277,18 @@ function drawGround(svg, state) {
   // laid out in stored coordinates and then turned, so the labels stay upright
   // however the ground is rotated.
   const at = function (x, y) { return viewPoint(state, x, y); };
-  const offIsLeft = state.hand === 'l';   // before any rotation
+  // Facing the other way puts the off side on the other hand, and the batter
+  // and bowler swap ends.
+  const offIsLeft = (state.hand === 'l') !== !!state.end;
+  const behind = state.end ? -1 : 1;   // from the striker towards the keeper
+  const strikeY = state.end ? FIELD.BOWLER_Y : FIELD.STRIKER_Y;
+  const otherY = state.end ? FIELD.STRIKER_Y : FIELD.BOWLER_Y;
   const bodyX = FIELD.STRIKER_X + (offIsLeft ? 16 : -16);
-  const body = at(bodyX, FIELD.STRIKER_Y - 4);
-  const batFrom = at(bodyX + (offIsLeft ? 8 : -8), FIELD.STRIKER_Y + 2);
-  const batTo = at(bodyX + (offIsLeft ? 18 : -18), FIELD.STRIKER_Y + 16);
-  const handLabel = at(bodyX + (offIsLeft ? 34 : -34), FIELD.STRIKER_Y + 6);
-  const nonStriker = at(FIELD.BOWLER_X - 16, FIELD.BOWLER_Y + 6);
+  const body = at(bodyX, strikeY - 4 * behind);
+  const batFrom = at(bodyX + (offIsLeft ? 8 : -8), strikeY + 2 * behind);
+  const batTo = at(bodyX + (offIsLeft ? 18 : -18), strikeY + 16 * behind);
+  const handLabel = at(bodyX + (offIsLeft ? 34 : -34), strikeY + 6 * behind);
+  const nonStriker = at(FIELD.BOWLER_X - 16, otherY + 6 * behind);
 
   svg.appendChild(svgEl('circle', {
     cx: body.x, cy: body.y, r: 9,
@@ -212,25 +315,31 @@ function drawGround(svg, state) {
 }
 
 function drawHeader(svg, state, stats) {
-  svg.appendChild(labelText(40, 46, state.title || 'Fielding setup', 30, '800', 'start'));
+  const left = FIELD.VIEW.X + 40;
+  const right = FIELD.VIEW.X + FIELD.VIEW.W - 40;
+  const top = FIELD.VIEW.Y + 46;
+  svg.appendChild(labelText(left, top, state.title || 'Fielding setup', 30, '800', 'start'));
   const sub = [];
   if (state.bowlingTo) sub.push(state.bowlingTo);
   sub.push(state.hand === 'r' ? 'Right-hand batter' : 'Left-hand batter');
   sub.push(stats.onField + ' fielders');
+  if (state.end) sub.push('batting from the far end');
   const facing = ORIENTATION_NOTE[rotationOf(state)];
   if (facing) sub.push(facing);
-  svg.appendChild(labelText(40, 74, sub.join('  ·  '), 17, '500', 'start', COLORS.muted));
-  svg.appendChild(labelText(FIELD.W - 40, 46, 'Cricket Fielding Board', 17, '700', 'end', COLORS.muted));
+  svg.appendChild(labelText(left, top + 28, sub.join('  ·  '), 17, '500', 'start', COLORS.muted));
+  svg.appendChild(labelText(right, top, 'Cricket Fielding Board', 17, '700', 'end', COLORS.muted));
 }
 
 function drawFooter(svg, state, stats) {
-  const y = FIELD.H - 42;
+  const y = FIELD.VIEW.Y + FIELD.VIEW.H - 42;
+  const left = FIELD.VIEW.X + 40;
+  const right = FIELD.VIEW.X + FIELD.VIEW.W - 40;
   const items = [
     ['Fielder', COLORS.fielder],
     ['Keeper', COLORS.keeper],
     ['Bowler', COLORS.bowler],
   ];
-  let x = 40;
+  let x = left;
   items.forEach(function (item) {
     svg.appendChild(svgEl('circle', { cx: x + 8, cy: y - 5, r: 8, fill: item[1], stroke: '#0b1a13', 'stroke-width': 1.5 }));
     svg.appendChild(labelText(x + 24, y, item[0], 16, '600', 'start', COLORS.muted));
@@ -239,16 +348,16 @@ function drawFooter(svg, state, stats) {
 
   const summary = 'Inside circle ' + stats.inside + '  ·  Outside ' + stats.outside +
     '  ·  Leg side ' + stats.leg + '  ·  Off side ' + stats.off;
-  svg.appendChild(labelText(FIELD.W - 40, y, summary, 16, '600', 'end', COLORS.muted));
+  svg.appendChild(labelText(right, y, summary, 16, '600', 'end', COLORS.muted));
 
   if (state.notes) {
-    svg.appendChild(labelText(40, FIELD.H - 14, state.notes.slice(0, 110), 15, '500', 'start', 'rgba(255,255,255,0.45)'));
+    svg.appendChild(labelText(left, y + 28, state.notes.slice(0, 110), 15, '500', 'start', 'rgba(255,255,255,0.45)'));
   }
 }
 
 function drawGuides(svg, state) {
   const g = svgEl('g', { 'data-noexport': '1' });
-  positionsFor(state.hand).forEach(function (p) {
+  positionsFor(state.hand, state.end).forEach(function (p) {
     const taken = state.fielders.some(function (f) {
       return Math.hypot(f.x - p.x, f.y - p.y) < 40;
     });
@@ -302,7 +411,7 @@ function drawFielders(svg, state, selectedIndex) {
       fielder: f,
       name: player ? player.name : 'Fielder',
       num: player && player.num ? String(player.num) : null,
-      position: nearestPositionName(f.x, f.y, state.hand),
+      position: nameAt(state, f.x, f.y),
       at: viewPoint(state, f.x, f.y),
     };
   });
@@ -376,7 +485,9 @@ function computeStats(state) {
   let inside = 0, outside = 0, leg = 0, off = 0;
   state.fielders.forEach(function (f) {
     if (isInsideCircle(f.x, f.y)) inside++; else outside++;
-    if (sideOf(f.x, state.hand) === 'leg') leg++; else off++;
+    const side = sideAt(state, f.x);
+    if (side === 'leg') leg++;
+    else if (side === 'off') off++;
   });
   return {
     onField: state.fielders.length,
@@ -393,7 +504,7 @@ function renderField(container, state, opts) {
   const o = opts || {};
   const stats = computeStats(state);
   const svg = svgEl('svg', {
-    viewBox: '0 0 ' + FIELD.W + ' ' + FIELD.H,
+    viewBox: FIELD.VIEW.X + ' ' + FIELD.VIEW.Y + ' ' + FIELD.VIEW.W + ' ' + FIELD.VIEW.H,
     xmlns: SVG_NS,
     id: 'fieldSvg',
     role: 'img',
@@ -460,7 +571,7 @@ function renderField(container, state, opts) {
     drag.moved = true;
     drag.node.setAttribute('transform', 'translate(' + at.x + ',' + at.y + ')');
     const posLabel = drag.node.querySelector('[data-poslabel]');
-    if (posLabel) posLabel.textContent = nearestPositionName(c.x, c.y, state.hand);
+    if (posLabel) posLabel.textContent = nameAt(state, c.x, c.y);
     drag.last = c;
     if (o.onDrag) o.onDrag(drag.index, c.x, c.y);
     evt.preventDefault();

@@ -16,6 +16,7 @@ function defaultState() {
     title: 'Fielding setup',
     hand: 'r',
     rot: 0,        // quarter turns of the ground, in degrees: 0, 90, 180, 270
+    end: false,    // true = the striker is batting from the far end
     bowlingTo: '',
     notes: '',
     squad: [],
@@ -66,6 +67,7 @@ function encodeState(state, mode) {
     t: state.title || '',
     h: state.hand || 'r',
     r: Number(state.rot) || 0,
+    e: state.end ? 1 : 0,
     o: state.bowlingTo || '',
     n: state.notes || '',
     s: state.squad.map(function (p) { return p.name; }),
@@ -88,6 +90,7 @@ function decodeState(encoded) {
   state.hand = raw.h === 'l' ? 'l' : 'r';
   // raw.p is the earlier half-turn flag, kept so older links still open.
   state.rot = Number(raw.r) || (raw.p === 1 ? 180 : 0);
+  state.end = raw.e === 1;
   state.bowlingTo = raw.o || '';
   state.notes = raw.n || '';
   state.squad = (raw.s || []).map(function (name, i) {

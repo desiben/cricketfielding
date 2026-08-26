@@ -20,6 +20,9 @@ static files on any host.
   one. It is off by default.
 - **Right- or left-hand batter** — the whole set of named positions mirrors, and
   `Mirror field` flips the players you have already placed.
+- **Switch ends** — the batter takes strike at the other end, as they do between
+  overs. Nobody moves, but the off and leg sides swap round, so square leg is now
+  point and fine leg is now long off. Every name and both side counts update.
 - **Turn the ground** — `Rotate 90°` steps through quarter turns, so the pitch can
   run across the page or the batter's end can sit at the top. It turns the view
   only: every player keeps their spot and its name. The orientation travels with
@@ -28,7 +31,9 @@ static files on any host.
   attacking with three slips, and a T20 spin field.
 - **Live checks** — how many fielders are on the field, inside and outside the
   30-yard circle, and per side, with a warning when more than five are on the leg
-  side (a no-ball in limited-overs cricket).
+  side (a no-ball in limited-overs cricket). Anyone on the line down the middle of
+  the pitch — the keeper and the bowler, normally — belongs to neither side and is
+  left out of those counts.
 - **Save as image** — a PNG of the ground, with the title, names, positions and
   the counts. `Copy image` puts the same picture on the clipboard where the
   browser supports it.
@@ -101,6 +106,12 @@ link the app produces points at that address.
 | `js/field.js` | Draws the ground as an SVG and handles dragging |
 | `js/export.js` | Turns that SVG into a PNG |
 | `js/app.js` | Squad, sharing, buttons — everything wired together |
+
+Beyond the rope there is a strip of outfield, the advertising boards, two tiers
+of seating with aisles between the blocks, four floodlights and a sightscreen at
+each end that turns with the pitch. It is scenery drawn around a playing area
+whose coordinates never change, so setups made before it existed still open
+exactly as they were.
 
 The ground is a plan view from above with the bowler running in from the top, so
 for a right-hander the off side falls on the right of the drawing and the leg

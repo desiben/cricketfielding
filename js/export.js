@@ -27,10 +27,10 @@ function renderPngBlob(svg, scale) {
     const img = new Image();
     img.onload = function () {
       const canvas = document.createElement('canvas');
-      canvas.width = FIELD.W * s;
-      canvas.height = FIELD.H * s;
+      canvas.width = FIELD.VIEW.W * s;
+      canvas.height = FIELD.VIEW.H * s;
       const ctx = canvas.getContext('2d');
-      ctx.fillStyle = '#0b1a13';
+      ctx.fillStyle = '#050c09';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(function (blob) {

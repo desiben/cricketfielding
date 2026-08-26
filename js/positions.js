@@ -7,8 +7,12 @@
    what you see on television from behind the bowler's arm. */
 
 const FIELD = {
+  // The playing area keeps its coordinates whatever is drawn around it, so
+  // setups made before the ground had surroundings still open correctly.
   W: 1000,
   H: 1140,
+  // The drawing extends well past the boundary to make room for the stadium.
+  VIEW: { X: -115, Y: -120, W: 1230, H: 1405 },
   CX: 500,
   CY: 590,
   R: 465,
@@ -91,18 +95,28 @@ const POSITIONS = [
   return { id: p[0], name: p[1], angle: p[2], yards: p[3], cat: p[4] };
 });
 
-/* Position coordinates for a given batting hand ('r' or 'l').
+/* Which end the striker is batting from. Positions are laid out around the
+   striker at the bottom of the ground; when the batter is at the other end the
+   whole naming frame turns half way round the middle of the ground, which is
+   what happens at the end of an over: nobody moves, but a fielder who was at
+   square leg is now at point. */
+function otherEnd(x, y) {
+  return { x: 2 * FIELD.CX - x, y: 2 * FIELD.CY - y };
+}
+
+/* Position coordinates for a given batting hand ('r' or 'l') and end.
    For a left-hander every named position is mirrored across the pitch. */
-function positionsFor(hand) {
+function positionsFor(hand, end) {
   return POSITIONS.map(function (p) {
-    const pt = polar(hand === 'l' ? -p.angle : p.angle, p.yards);
+    let pt = polar(hand === 'l' ? -p.angle : p.angle, p.yards);
+    if (end) pt = otherEnd(pt.x, pt.y);
     return { id: p.id, name: p.name, cat: p.cat, x: pt.x, y: pt.y };
   });
 }
 
 /* Name of the standard position closest to an arbitrary point. */
-function nearestPositionName(x, y, hand) {
-  const list = positionsFor(hand);
+function nearestPositionName(x, y, hand, end) {
+  const list = positionsFor(hand, end);
   let best = null;
   let bestD = Infinity;
   for (let i = 0; i < list.length; i++) {
@@ -116,9 +130,23 @@ function nearestPositionName(x, y, hand) {
 }
 
 /* Which half of the ground a point sits in. */
-function sideOf(x, hand) {
-  const off = hand === 'r' ? x > FIELD.CX : x < FIELD.CX;
+/* 'off', 'leg', or 'straight' for anyone standing on the line down the middle
+   of the pitch — the keeper and the bowler, normally, who belong to neither
+   side and must not be counted against the leg-side limit. */
+function sideOf(x, hand, end) {
+  const at = end ? 2 * FIELD.CX - x : x;
+  if (Math.abs(at - FIELD.CX) <= 6) return 'straight';
+  const off = hand === 'r' ? at > FIELD.CX : at < FIELD.CX;
   return off ? 'off' : 'leg';
+}
+
+/* The two calls above, reading the batter straight off a setup. */
+function nameAt(state, x, y) {
+  return nearestPositionName(x, y, state.hand, state.end);
+}
+
+function sideAt(state, x) {
+  return sideOf(x, state.hand, state.end);
 }
 
 function isInsideCircle(x, y) {
