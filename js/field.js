@@ -321,6 +321,7 @@ function renderField(container, state, opts) {
     const posLabel = drag.node.querySelector('[data-poslabel]');
     if (posLabel) posLabel.textContent = nearestPositionName(c.x, c.y, state.hand);
     drag.last = c;
+    if (o.onDrag) o.onDrag(drag.index, c.x, c.y);
     evt.preventDefault();
   });
 

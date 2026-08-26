@@ -311,7 +311,11 @@ input:disabled, textarea:disabled {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
-  flex: none;
+  flex: 0 1 auto;
+  max-width: 42%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .iconbtn {
@@ -476,6 +480,26 @@ input:disabled, textarea:disabled {
 
 body.mode-view .admin-only,
 body.mode-edit .admin-only { display: none !important; }
+
+.boardbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.readout {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(53, 192, 122, 0.12);
+  border: 1px solid rgba(53, 192, 122, 0.35);
+  border-radius: 999px;
+  padding: 5px 11px;
+  white-space: nowrap;
+}
+
+.readout[hidden] { display: none; }
 
 /* Nothing on the board toolbar does anything on a view-only link. */
 body.mode-view .boardbar { display: none; }

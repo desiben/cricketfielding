@@ -10,7 +10,7 @@
   let mode = MODES.ADMIN;
   let selectedPlayerId = null;
   let selectedFielderIndex = -1;
-  let showGuides = true;
+  let showGuides = false;
   let suppressHash = false;
 
   const $ = function (id) { return document.getElementById(id); };
@@ -19,6 +19,19 @@
   function isAdmin() { return mode === MODES.ADMIN; }
 
   /* ------------------------------------------------------------- utilities */
+
+  function showReadout(text) {
+    const node = $('dragReadout');
+    node.textContent = text;
+    node.hidden = !text;
+  }
+
+  function announcePosition(fielder) {
+    if (!fielder) return;
+    const player = playerById(fielder.pid);
+    toast((player ? player.name : 'Fielder') + ' is at ' +
+      nearestPositionName(fielder.x, fielder.y, state.hand).toLowerCase() + '.');
+  }
 
   let toastTimer = null;
   function toast(message) {
@@ -92,6 +105,7 @@
       selectedFielderIndex = fielderIndexOf(selectedPlayerId);
       selectedPlayerId = null;
       commit();
+      announcePosition(state.fielders[selectedFielderIndex]);
       return;
     }
 
@@ -111,6 +125,7 @@
     state.fielders.push({ pid: next.id, x: x, y: y, role: roleForSpot(x, y) });
     selectedFielderIndex = state.fielders.length - 1;
     commit();
+    announcePosition(state.fielders[selectedFielderIndex]);
   }
 
   function freeSpotFor(index) {
@@ -143,6 +158,7 @@
     state.fielders.push({ pid: playerId, x: spot.x, y: spot.y, role: roleForSpot(spot.x, spot.y) });
     selectedFielderIndex = state.fielders.length - 1;
     commit();
+    announcePosition(state.fielders[selectedFielderIndex]);
   }
 
   function setRole(index, role) {
@@ -472,13 +488,21 @@
       canEdit: canEdit(),
       showGuides: showGuides,
       selectedIndex: selectedFielderIndex,
+      onDrag: function (index, x, y) {
+        const fielder = state.fielders[index];
+        const player = fielder ? playerById(fielder.pid) : null;
+        showReadout((player ? player.name : 'Fielder') + ' → ' +
+          nearestPositionName(x, y, state.hand));
+      },
       onMove: function (index, x, y) {
         const fielder = state.fielders[index];
         if (!fielder) return;
         fielder.x = x;
         fielder.y = y;
         selectedFielderIndex = index;
+        showReadout('');
         commit();
+        announcePosition(fielder);
       },
       onSelect: function (index) {
         selectedFielderIndex = index;

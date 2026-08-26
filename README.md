@@ -10,9 +10,14 @@ static files on any host.
 
 ## What you can do
 
-- **Set the field** — drag any fielder anywhere, or tap a position guide to drop
-  a player straight onto it. Every fielder is auto-labelled with the closest
-  standard position ("deep midwicket", "backward point", …).
+- **Set the field** — drag any fielder anywhere, or tap a player and then tap the
+  ground to drop them there. The ground stays clear: instead of a grid of empty
+  markers, the app names the position for you. While you drag, a readout follows
+  along ("H. Pandya → deep extra cover"); on release it is confirmed, written
+  under the player, and shown next to their name in the squad list.
+- **Every standard position, when you want them** — the tick box above the ground
+  shows all 43 named positions as guides you can tap to drop a player exactly on
+  one. It is off by default.
 - **Right- or left-hand batter** — the whole set of named positions mirrors, and
   `Mirror field` flips the players you have already placed.
 - **Ready-made fields** — ODI powerplay, ODI middle overs, death overs, Test

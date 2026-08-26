@@ -85,10 +85,13 @@
         <button id="btnFlip" class="btn small ghost" type="button">Mirror field</button>
         <button id="btnClearField" class="btn small ghost danger" type="button">Clear field</button>
       </div>
-      <label class="check">
-        <input id="chkGuides" type="checkbox" checked>
-        <span>Show position guides</span>
-      </label>
+      <div class="boardbar-right">
+        <span id="dragReadout" class="readout" hidden></span>
+        <label class="check">
+          <input id="chkGuides" type="checkbox">
+          <span>Show every standard position</span>
+        </label>
+      </div>
     </div>
 
     <div id="fieldWrap" class="fieldwrap"></div>
