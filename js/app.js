@@ -29,8 +29,11 @@
   function announcePosition(fielder) {
     if (!fielder) return;
     const player = playerById(fielder.pid);
-    toast((player ? player.name : 'Fielder') + ' is at ' +
-      nearestPositionName(fielder.x, fielder.y, state.hand).toLowerCase() + '.');
+    const who = player ? player.name : 'Fielder';
+    const position = nearestPositionName(fielder.x, fielder.y, state.hand);
+    if (position === 'Wicketkeeper') toast(who + ' is keeping wicket.');
+    else if (position === 'Bowler') toast(who + " is at the bowler's end.");
+    else toast(who + ' is at ' + position.toLowerCase() + '.');
   }
 
   let toastTimer = null;
@@ -266,6 +269,8 @@
 
     $('btnAuto').disabled = !canEdit();
     $('btnFlip').disabled = !canEdit();
+    $('btnFlipEnds').disabled = !canEdit();
+    $('btnFlipEnds').textContent = state.flip ? 'Batter at top' : 'Flip ends';
     $('btnClearField').disabled = !canEdit();
     $('squadHint').textContent = canEdit()
       ? 'Tap a player, then tap the ground to place them. Drag any fielder to move.'
@@ -625,6 +630,13 @@
       if (!canEdit()) return;
       state.fielders.forEach(function (f) { f.x = 2 * FIELD.CX - f.x; });
       commit();
+    });
+
+    $('btnFlipEnds').addEventListener('click', function () {
+      if (!canEdit()) return;
+      state.flip = !state.flip;
+      commit();
+      toast(state.flip ? 'Looking from the batter\'s end.' : 'Looking from the bowler\'s end.');
     });
 
     $('btnClearField').addEventListener('click', function () {

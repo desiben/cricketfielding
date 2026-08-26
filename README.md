@@ -20,6 +20,11 @@ static files on any host.
   one. It is off by default.
 - **Right- or left-hand batter** — the whole set of named positions mirrors, and
   `Mirror field` flips the players you have already placed.
+- **Either end of the ground** — `Flip ends` turns the ground end for end so the
+  batter is at the top, the way you would see it from behind the striker. It is a
+  half-turn of the view only: every player keeps their position and its name, the
+  off and leg sides simply change hands. The orientation travels with the link
+  and appears in the saved image.
 - **Ready-made fields** — ODI powerplay, ODI middle overs, death overs, Test
   attacking with three slips, and a T20 spin field.
 - **Live checks** — how many fielders are on the field, inside and outside the

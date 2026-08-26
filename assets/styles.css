@@ -474,6 +474,8 @@ input:disabled, textarea:disabled {
   border-radius: 999px;
   z-index: 60;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  /* It sits over the bottom of the ground; never let it swallow a tap. */
+  pointer-events: none;
 }
 
 /* ------------------------------------------------------------ responsive */

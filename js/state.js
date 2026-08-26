@@ -15,6 +15,7 @@ function defaultState() {
   return {
     title: 'Fielding setup',
     hand: 'r',
+    flip: false,   // true = the ground is viewed from the batter's end
     bowlingTo: '',
     notes: '',
     squad: [],
@@ -64,6 +65,7 @@ function encodeState(state, mode) {
     m: mode === MODES.ADMIN ? 'a' : mode === MODES.EDIT ? 'e' : 'v',
     t: state.title || '',
     h: state.hand || 'r',
+    p: state.flip ? 1 : 0,
     o: state.bowlingTo || '',
     n: state.notes || '',
     s: state.squad.map(function (p) { return p.name; }),
@@ -84,6 +86,7 @@ function decodeState(encoded) {
   const state = defaultState();
   state.title = raw.t || 'Fielding setup';
   state.hand = raw.h === 'l' ? 'l' : 'r';
+  state.flip = raw.p === 1;
   state.bowlingTo = raw.o || '';
   state.notes = raw.n || '';
   state.squad = (raw.s || []).map(function (name, i) {

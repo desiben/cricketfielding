@@ -33,6 +33,16 @@ const COLORS = {
   muted: '#9fd3b6',
 };
 
+/* Fielder coordinates are always stored with the batter at the bottom of the
+   ground. When the setup is flipped, the whole ground is turned end for end for
+   drawing only: a half-turn about the centre, which is its own inverse, so the
+   same function converts a pointer position back into stored coordinates.
+   Labels keep their upright offsets, so only anchor points move. */
+function viewPoint(state, x, y) {
+  if (!state.flip) return { x: x, y: y };
+  return { x: 2 * FIELD.CX - x, y: 2 * FIELD.CY - y };
+}
+
 function initials(name) {
   const parts = String(name || '').trim().split(/[\s.]+/).filter(Boolean);
   if (!parts.length) return '?';
@@ -126,23 +136,27 @@ function drawGround(svg, state) {
     }
   });
 
-  // Batters. The striker's stance shows which hand is on strike.
-  const offLeft = state.hand === 'r';
-  const strikerX = FIELD.CX + (offLeft ? 16 : -16);
+  // Batters. The striker's stance shows which hand is on strike. Turning the
+  // ground end for end swaps the ends and puts the off side on the other hand.
+  const striker = viewPoint(state, FIELD.STRIKER_X, FIELD.STRIKER_Y);
+  const bowlerEnd = viewPoint(state, FIELD.BOWLER_X, FIELD.BOWLER_Y);
+  const down = state.flip ? -1 : 1;
+  const offLeft = (state.hand === 'r') !== !!state.flip;
+  const strikerX = striker.x + (offLeft ? 16 : -16);
   svg.appendChild(svgEl('circle', {
-    cx: strikerX, cy: FIELD.STRIKER_Y - 4, r: 9,
+    cx: strikerX, cy: striker.y - 4 * down, r: 9,
     fill: '#111827', stroke: '#ffffff', 'stroke-width': 2,
   }));
   svg.appendChild(svgEl('line', {
-    x1: strikerX + (offLeft ? 8 : -8), y1: FIELD.STRIKER_Y + 2,
-    x2: strikerX + (offLeft ? 18 : -18), y2: FIELD.STRIKER_Y + 16,
+    x1: strikerX + (offLeft ? 8 : -8), y1: striker.y + 2 * down,
+    x2: strikerX + (offLeft ? 18 : -18), y2: striker.y + 16 * down,
     stroke: '#f8fafc', 'stroke-width': 3, 'stroke-linecap': 'round',
   }));
-  svg.appendChild(haloLabel(strikerX + (offLeft ? 34 : -34), FIELD.STRIKER_Y + 6,
+  svg.appendChild(haloLabel(strikerX + (offLeft ? 34 : -34), striker.y + 6 * down,
     state.hand === 'r' ? 'RHB' : 'LHB', 15, '700'));
 
   svg.appendChild(svgEl('circle', {
-    cx: FIELD.CX - 16, cy: FIELD.BOWLER_Y + 6, r: 8,
+    cx: bowlerEnd.x - 16, cy: bowlerEnd.y + 6 * down, r: 8,
     fill: '#111827', stroke: '#ffffff', 'stroke-width': 2, opacity: '0.85',
   }));
 
@@ -159,6 +173,7 @@ function drawHeader(svg, state, stats) {
   if (state.bowlingTo) sub.push(state.bowlingTo);
   sub.push(state.hand === 'r' ? 'Right-hand batter' : 'Left-hand batter');
   sub.push(stats.onField + ' fielders');
+  if (state.flip) sub.push("from the batter's end");
   svg.appendChild(labelText(40, 74, sub.join('  ·  '), 17, '500', 'start', COLORS.muted));
   svg.appendChild(labelText(FIELD.W - 40, 46, 'Cricket Fielding Board', 17, '700', 'end', COLORS.muted));
 }
@@ -193,12 +208,15 @@ function drawGuides(svg, state) {
       return Math.hypot(f.x - p.x, f.y - p.y) < 40;
     });
     if (taken) return;
+    const at = viewPoint(state, p.x, p.y);
     const spot = svgEl('g', { class: 'guide', 'data-guide': p.id, 'data-x': p.x, 'data-y': p.y });
     spot.appendChild(svgEl('circle', {
-      cx: p.x, cy: p.y, r: 16, fill: 'rgba(255,255,255,0.10)',
+      cx: at.x, cy: at.y, r: 16, fill: 'rgba(255,255,255,0.10)',
       stroke: 'rgba(255,255,255,0.5)', 'stroke-width': 1.4, 'stroke-dasharray': '4 4',
     }));
-    spot.appendChild(labelText(p.x, p.y + 30, p.name, 13, '600', 'middle', 'rgba(255,255,255,0.75)'));
+    const guideLabel = labelText(at.x, at.y + 30, p.name, 13, '600', 'middle', 'rgba(255,255,255,0.75)');
+    guideLabel.setAttribute('pointer-events', 'none');
+    spot.appendChild(guideLabel);
     g.appendChild(spot);
   });
   svg.appendChild(g);
@@ -215,15 +233,17 @@ function drawFielders(svg, state, selectedIndex) {
     const player = state.squad.find(function (p) { return p.id === f.pid; });
     const name = player ? player.name : 'Fielder';
     const fill = f.role === 'k' ? COLORS.keeper : f.role === 'b' ? COLORS.bowler : COLORS.fielder;
+    const at = viewPoint(state, f.x, f.y);
     const g = svgEl('g', {
       class: 'chip' + (i === selectedIndex ? ' selected' : ''),
       'data-index': i,
-      transform: 'translate(' + f.x + ',' + f.y + ')',
+      transform: 'translate(' + at.x + ',' + at.y + ')',
     });
 
     if (i === selectedIndex) {
       const halo = svgEl('circle', { r: 28, fill: 'none', stroke: '#38bdf8', 'stroke-width': 3 });
       halo.setAttribute('data-noexport', '1');
+      halo.setAttribute('pointer-events', 'none');
       g.appendChild(halo);
     }
 
@@ -234,16 +254,20 @@ function drawFielders(svg, state, selectedIndex) {
       16, '800', 'middle', COLORS.chipText));
 
     const nameLabel = haloLabel(0, labelBelow ? 36 : -40, name, 16, '700');
+    nameLabel.setAttribute('pointer-events', 'none');
     g.appendChild(nameLabel);
     const posLabel = haloLabel(0, labelBelow ? 52 : -25,
       nearestPositionName(f.x, f.y, state.hand), 12.5, '500');
     posLabel.setAttribute('opacity', '0.85');
     posLabel.setAttribute('data-poslabel', '1');
+    posLabel.setAttribute('pointer-events', 'none');
     g.appendChild(posLabel);
 
     if (f.role !== 'f') {
-      g.appendChild(labelText(0, labelBelow ? -27 : 40, f.role === 'k' ? 'WK' : 'BOWL',
-        12.5, '800', 'middle', '#fde68a'));
+      const roleLabel = labelText(0, labelBelow ? -27 : 40, f.role === 'k' ? 'WK' : 'BOWL',
+        12.5, '800', 'middle', '#fde68a');
+      roleLabel.setAttribute('pointer-events', 'none');
+      g.appendChild(roleLabel);
     }
     svg.appendChild(g);
   });
@@ -296,6 +320,13 @@ function renderField(container, state, opts) {
     return { x: p.x, y: p.y };
   };
 
+  // Pointer positions arrive in drawing space; store them the canonical way.
+  const toStored = function (evt) {
+    const p = toSvgPoint(evt);
+    const canonical = viewPoint(state, p.x, p.y);
+    return clampToField(canonical.x, canonical.y);
+  };
+
   if (!o.canEdit) return svg;
 
   svg.classList.add('editable');
@@ -314,10 +345,10 @@ function renderField(container, state, opts) {
 
   svg.addEventListener('pointermove', function (evt) {
     if (!drag) return;
-    const p = toSvgPoint(evt);
-    const c = clampToField(p.x, p.y);
+    const c = toStored(evt);
+    const at = viewPoint(state, c.x, c.y);
     drag.moved = true;
-    drag.node.setAttribute('transform', 'translate(' + c.x + ',' + c.y + ')');
+    drag.node.setAttribute('transform', 'translate(' + at.x + ',' + at.y + ')');
     const posLabel = drag.node.querySelector('[data-poslabel]');
     if (posLabel) posLabel.textContent = nearestPositionName(c.x, c.y, state.hand);
     drag.last = c;
@@ -340,10 +371,9 @@ function renderField(container, state, opts) {
   svg.addEventListener('click', function (evt) {
     if (evt.target.closest('g.chip')) return;
     const guide = evt.target.closest('g.guide');
-    const p = guide
-      ? { x: Number(guide.dataset.x), y: Number(guide.dataset.y) }
-      : toSvgPoint(evt);
-    const c = clampToField(p.x, p.y);
+    const c = guide
+      ? clampToField(Number(guide.dataset.x), Number(guide.dataset.y))
+      : toStored(evt);
     if (o.onPlace) o.onPlace(c.x, c.y);
   });
 
