@@ -74,6 +74,15 @@
         <button id="btnSampleSquad" class="btn small ghost" type="button">Load sample XI</button>
         <button id="btnClearSquad" class="btn small ghost danger" type="button">Clear squad</button>
       </div>
+
+      <div class="admin-only teams">
+        <h3 class="subhead">Saved teams</h3>
+        <div class="row">
+          <input id="inpTeamName" type="text" maxlength="40" placeholder="Name this team">
+          <button id="btnSaveTeam" class="btn small" type="button">Save team</button>
+        </div>
+        <ul id="teamList" class="saved"></ul>
+      </div>
     </section>
 
     <section class="card admin-only" id="recordsCard">
@@ -200,6 +209,7 @@
     page itself — select all, copy — works too; the box reads either.
     <a href="tools/bookmarklet.html" target="_blank" rel="noopener">Get the bookmarklet</a>.</p>
 
+  <p id="importFor" class="importfor" hidden></p>
   <textarea id="statsPaste" rows="5" placeholder="Paste the record here"></textarea>
   <div class="row">
     <button id="btnReadStats" class="btn" type="button">Read it</button>
@@ -214,9 +224,9 @@
     <div class="sharerow">
       <div>
         <strong>One of ours</strong>
-        <span class="hint">Attach the record to a squad player.</span>
+        <span class="hint" id="attachHint">Attach the record to a squad player.</span>
       </div>
-      <div class="row">
+      <div class="row" id="attachRow">
         <select id="statsAttach" class="select"></select>
         <button id="btnSaveStats" class="btn small" type="button">Save</button>
       </div>
@@ -244,6 +254,15 @@
   <div id="cardBody"></div>
   <div class="row end">
     <button id="btnCloseCard" class="btn" type="button">Close</button>
+  </div>
+</dialog>
+
+<dialog id="confirmDlg" class="dialog narrow">
+  <h2 id="confirmTitle"></h2>
+  <p id="confirmBody" class="hint"></p>
+  <div class="row end">
+    <button id="btnConfirmNo" class="btn ghost" type="button">Cancel</button>
+    <button id="btnConfirmOk" class="btn primary" type="button">Do it</button>
   </div>
 </dialog>
 

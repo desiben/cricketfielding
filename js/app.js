@@ -270,6 +270,30 @@
   /* ---------------------------------------------------------------- records */
 
   let pendingRecord = null;
+  let importTarget = null;     // the squad player an import was opened for
+  let pasteTimer = null;
+
+  /* One styled confirmation for everything that overwrites or throws work
+     away, so the browser's own dialog never appears. */
+  let confirmSettle = null;
+
+  function askConfirm(options) {
+    return new Promise(function (resolve) {
+      const dlg = $('confirmDlg');
+      $('confirmTitle').textContent = options.title;
+      $('confirmBody').textContent = options.body;
+      const ok = $('btnConfirmOk');
+      ok.textContent = options.confirm || 'Do it';
+      ok.className = 'btn ' + (options.danger ? 'danger' : 'primary');
+      confirmSettle = function (answer) {
+        confirmSettle = null;
+        closeDialog(dlg);
+        resolve(answer);
+      };
+      showDialog(dlg);
+      ok.focus();
+    });
+  }
 
   function showDialog(dlg) {
     if (typeof dlg.showModal === 'function') dlg.showModal();
@@ -305,12 +329,29 @@
       : 'no squad yet';
   }
 
-  function openImport() {
+  function openImport(player) {
     pendingRecord = null;
+    importTarget = player || null;
     $('statsPaste').value = '';
     $('statsMsg').textContent = '';
     $('statsPreview').hidden = true;
     $('scoutRead').hidden = true;
+
+    const banner = $('importFor');
+    if (importTarget) {
+      banner.textContent = 'Importing for ' + importTarget.name;
+      banner.hidden = false;
+      $('attachHint').textContent = 'The record will be saved to ' + importTarget.name + '.';
+      // Hide the picker, never the row: the Save button lives in it.
+      $('statsAttach').hidden = true;
+      $('btnSaveStats').textContent = 'Save to ' + importTarget.name;
+    } else {
+      banner.hidden = true;
+      $('attachHint').textContent = 'Attach the record to a squad player.';
+      $('statsAttach').hidden = false;
+      $('btnSaveStats').textContent = 'Save';
+    }
+
     showDialog($('statsDlg'));
     $('statsPaste').focus();
   }
@@ -348,6 +389,12 @@
       fig('catches', record.catches),
     ].join('');
 
+    if (importTarget) {
+      $('btnSaveStats').disabled = false;
+      $('statsPreview').hidden = false;
+      return;
+    }
+
     const select = $('statsAttach');
     select.innerHTML = '';
     if (!state.squad.length) {
@@ -367,10 +414,10 @@
     $('statsPreview').hidden = false;
   }
 
-  function readPaste() {
+  function readPaste(quiet) {
     const result = readPastedRecord($('statsPaste').value);
     if (result.error) {
-      $('statsMsg').textContent = result.error;
+      $('statsMsg').textContent = quiet ? '' : result.error;
       $('statsPreview').hidden = true;
       return;
     }
@@ -381,7 +428,7 @@
 
   function saveRecordToPlayer() {
     if (!pendingRecord) return;
-    const player = playerById($('statsAttach').value);
+    const player = importTarget || playerById($('statsAttach').value);
     if (!player) return;
     saveStatsFor(player.name, pendingRecord);
     toast(pendingRecord.name + "'s record saved to " + player.name + '.');
@@ -526,6 +573,104 @@
     toast('Keeper and catchers placed.');
   }
 
+  /* ------------------------------------------------------------------ teams */
+
+  const TEAMS_STORE = 'cf.teams';
+
+  function listTeams() {
+    try {
+      const raw = safeGet(TEAMS_STORE);
+      return raw ? JSON.parse(raw) : [];
+    } catch (err) {
+      return [];
+    }
+  }
+
+  function writeTeams(teams) {
+    safeSet(TEAMS_STORE, JSON.stringify(teams.slice(0, 30)));
+  }
+
+  function saveTeam(name) {
+    const teams = listTeams().filter(function (t) { return t.name !== name; });
+    teams.unshift({
+      name: name,
+      at: Date.now(),
+      players: state.squad.map(function (p) { return p.name; }),
+    });
+    writeTeams(teams);
+  }
+
+  function renderTeams() {
+    const list = $('teamList');
+    if (!list) return;
+    list.innerHTML = '';
+    const teams = listTeams();
+    if (!teams.length) {
+      const li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = 'Save the squad here and you can bring it back any time.';
+      list.appendChild(li);
+      return;
+    }
+    teams.forEach(function (team) {
+      const li = document.createElement('li');
+      const name = document.createElement('span');
+      name.className = 'sname';
+      name.textContent = team.name;
+      li.appendChild(name);
+
+      const count = document.createElement('span');
+      count.className = 'ptag';
+      count.textContent = team.players.length + ' players';
+      li.appendChild(count);
+
+      const restore = document.createElement('button');
+      restore.type = 'button';
+      restore.className = 'btn small ghost';
+      restore.textContent = 'Restore';
+      restore.addEventListener('click', function () {
+        askConfirm({
+          title: 'Restore ' + team.name + '?',
+          body: 'The squad becomes those ' + team.players.length + ' players and the field is cleared. '
+            + 'Career records stay where they are and reattach by name.',
+          confirm: 'Restore',
+        }).then(function (yes) {
+          if (!yes) return;
+          state.squad = team.players.map(function (n, i) {
+            return { id: uid(), name: n, num: i + 1 };
+          });
+          state.fielders = [];
+          selectedPlayerId = null;
+          selectedFielderIndex = -1;
+          commit();
+          toast(team.name + ' restored.');
+        });
+      });
+      li.appendChild(restore);
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'iconbtn';
+      del.title = 'Delete this team';
+      del.textContent = '✕';
+      del.addEventListener('click', function () {
+        askConfirm({
+          title: 'Delete ' + team.name + '?',
+          body: 'The saved team is removed from this device. Nothing else changes.',
+          confirm: 'Delete',
+          danger: true,
+        }).then(function (yes) {
+          if (!yes) return;
+          writeTeams(listTeams().filter(function (t) { return t.name !== team.name; }));
+          renderTeams();
+        });
+      });
+      li.appendChild(del);
+
+      list.appendChild(li);
+    });
+  }
+
   /* --------------------------------------------------------------- rendering */
 
   function syncInputs() {
@@ -650,14 +795,17 @@
         li.appendChild(toggle);
       }
 
-      if (isAdmin() && statsFor(player.name)) {
-        const card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'iconbtn rec';
-        card.title = 'Career record';
-        card.textContent = 'i';
-        card.addEventListener('click', function () { openPlayerCard(player); });
-        li.appendChild(card);
+      if (isAdmin()) {
+        const held = statsFor(player.name);
+        const rec = document.createElement('button');
+        rec.type = 'button';
+        rec.className = 'iconbtn rec' + (held ? ' has' : '');
+        rec.title = held ? player.name + "'s career record" : 'Import ' + player.name + "'s record";
+        rec.textContent = held ? 'i' : '↓';
+        rec.addEventListener('click', function () {
+          if (held) openPlayerCard(player); else openImport(player);
+        });
+        li.appendChild(rec);
       }
 
       if (isAdmin()) {
@@ -710,7 +858,14 @@
       li.innerHTML = '<span class="tname"></span><span class="tnote"></span>';
       li.querySelector('.tname').textContent = template.name;
       li.querySelector('.tnote').textContent = template.note;
-      const apply = function () { applyTemplate(template); };
+      const apply = function () {
+        if (!state.fielders.length) { applyTemplate(template); return; }
+        askConfirm({
+          title: 'Set the ' + template.name.toLowerCase() + '?',
+          body: 'All ' + state.fielders.length + ' fielders move to that field. What you have set out now is lost.',
+          confirm: 'Set the field',
+        }).then(function (yes) { if (yes) applyTemplate(template); });
+      };
       li.addEventListener('click', apply);
       li.addEventListener('keydown', function (evt) {
         if (evt.key === 'Enter' || evt.key === ' ') { evt.preventDefault(); apply(); }
@@ -850,6 +1005,7 @@
     renderMode();
     renderSquad();
     renderRecords();
+    renderTeams();
     renderSaved();
     renderBoard();
     renderStats();
@@ -927,26 +1083,57 @@
 
     $('btnSampleSquad').addEventListener('click', function () {
       if (!isAdmin()) return;
-      const sample = sampleState();
-      state.squad = sample.squad;
-      state.fielders = [];
-      selectedFielderIndex = -1;
-      commit();
-      toast('Sample XI loaded.');
+      const replacing = state.squad.length;
+      const ask = replacing
+        ? askConfirm({
+            title: 'Replace the squad with the sample XI?',
+            body: 'Your ' + replacing + ' players go, and the field is cleared. Save the team first '
+              + 'if you want them back.',
+            confirm: 'Replace',
+            danger: true,
+          })
+        : Promise.resolve(true);
+      ask.then(function (yes) {
+        if (!yes) return;
+        const sample = sampleState();
+        state.squad = sample.squad;
+        state.fielders = [];
+        selectedPlayerId = null;
+        selectedFielderIndex = -1;
+        commit();
+        toast('Sample XI loaded.');
+      });
     });
 
     $('btnClearSquad').addEventListener('click', function () {
-      if (!isAdmin()) return;
-      if (!state.squad.length) return;
-      if (!confirm('Remove every player from the squad?')) return;
-      state.squad = [];
-      state.fielders = [];
-      selectedPlayerId = null;
-      selectedFielderIndex = -1;
-      commit();
+      if (!isAdmin() || !state.squad.length) return;
+      askConfirm({
+        title: 'Clear the squad?',
+        body: 'All ' + state.squad.length + ' players go and the field empties. Career records stay '
+          + 'on this device. Save the team first if you want it back.',
+        confirm: 'Clear the squad',
+        danger: true,
+      }).then(function (yes) {
+        if (!yes) return;
+        state.squad = [];
+        state.fielders = [];
+        selectedPlayerId = null;
+        selectedFielderIndex = -1;
+        commit();
+      });
     });
 
-    $('btnAuto').addEventListener('click', autoArrange);
+    $('btnAuto').addEventListener('click', function () {
+      if (!canEdit()) return;
+      const waiting = state.squad.filter(function (p) { return fielderIndexOf(p.id) === -1; }).length;
+      if (!waiting) { autoArrange(); return; }
+      askConfirm({
+        title: 'Arrange the rest of the squad?',
+        body: 'The ' + waiting + (waiting === 1 ? ' player who is' : ' players who are')
+          + ' not on the field will be placed at standard positions. Anyone already out there stays put.',
+        confirm: 'Arrange',
+      }).then(function (yes) { if (yes) autoArrange(); });
+    });
 
     $('btnFlip').addEventListener('click', function () {
       if (!canEdit()) return;
@@ -972,9 +1159,17 @@
 
     $('btnClearField').addEventListener('click', function () {
       if (!canEdit() || !state.fielders.length) return;
-      state.fielders = [];
-      selectedFielderIndex = -1;
-      commit();
+      askConfirm({
+        title: 'Take everyone off the field?',
+        body: 'All ' + state.fielders.length + ' fielders come off. The squad is untouched.',
+        confirm: 'Clear the field',
+        danger: true,
+      }).then(function (yes) {
+        if (!yes) return;
+        state.fielders = [];
+        selectedFielderIndex = -1;
+        commit();
+      });
     });
 
     $('chkGuides').addEventListener('change', function (e) {
@@ -1010,7 +1205,41 @@
       applyTheme(true);
     });
 
-    $('btnImportStats').addEventListener('click', openImport);
+    $('btnConfirmOk').addEventListener('click', function () { if (confirmSettle) confirmSettle(true); });
+    $('btnConfirmNo').addEventListener('click', function () { if (confirmSettle) confirmSettle(false); });
+    $('confirmDlg').addEventListener('close', function () { if (confirmSettle) confirmSettle(false); });
+    $('confirmDlg').addEventListener('cancel', function () { if (confirmSettle) confirmSettle(false); });
+
+    $('btnSaveTeam').addEventListener('click', function () {
+      if (!isAdmin()) return;
+      const input = $('inpTeamName');
+      const name = (input.value || '').trim();
+      if (!name) { toast('Give the team a name first.'); input.focus(); return; }
+      if (!state.squad.length) { toast('There is no squad to save.'); return; }
+      const exists = listTeams().some(function (t) { return t.name === name; });
+      const ask = exists
+        ? askConfirm({
+            title: 'Overwrite ' + name + '?',
+            body: 'A saved team already has that name. It will be replaced by the current squad of '
+              + state.squad.length + '.',
+            confirm: 'Overwrite',
+          })
+        : Promise.resolve(true);
+      ask.then(function (yes) {
+        if (!yes) return;
+        saveTeam(name);
+        input.value = '';
+        renderTeams();
+        toast(name + ' saved — ' + state.squad.length + ' players.');
+      });
+    });
+
+    $('statsPaste').addEventListener('input', function () {
+      if (pasteTimer) clearTimeout(pasteTimer);
+      pasteTimer = setTimeout(function () { readPaste(true); }, 250);
+    });
+
+    $('btnImportStats').addEventListener('click', function () { openImport(null); });
     $('btnReadStats').addEventListener('click', readPaste);
     $('btnSaveStats').addEventListener('click', saveRecordToPlayer);
     $('btnScout').addEventListener('click', scoutBatter);

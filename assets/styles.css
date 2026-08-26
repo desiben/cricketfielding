@@ -653,6 +653,37 @@ textarea#statsPaste { font-family: ui-monospace, SFMono-Regular, Menlo, monospac
 #cardBody table { min-width: 380px; font-size: 13.5px; }
 #cardBody td { font-variant-numeric: tabular-nums; }
 
+.subhead {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 14px 0 8px;
+  font-weight: 700;
+}
+
+.teams { border-top: 1px solid var(--line); margin-top: 12px; }
+.teams .saved { margin-top: 8px; }
+
+.importfor {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--accent);
+  background: var(--accent-faint);
+  border: 1px solid var(--accent-line);
+  border-radius: 10px;
+  padding: 8px 12px;
+  margin: 0 0 10px;
+}
+
+.dialog.narrow { max-width: 420px; }
+.dialog.narrow h2 { font-size: 18px; }
+.dialog.narrow .hint { margin-bottom: 18px; font-size: 14px; }
+
+#statsAttach[hidden] { display: none; }
+
+.iconbtn.rec.has { color: var(--accent); border-color: var(--accent-line); }
+
 /* ------------------------------------------------------------------- toast */
 
 .toast {

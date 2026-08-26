@@ -41,7 +41,11 @@ static files on any host.
 - **Save as image** — a PNG of the ground, with the title, names, positions and
   the counts. `Copy image` puts the same picture on the clipboard where the
   browser supports it.
-- **Save on this device** — keep several named setups in the browser you use.
+- **Save on this device** — keep several named setups in the browser you use, and save the squad
+  itself as a named team you can restore later. Career records reattach by name when you do.
+- **Nothing goes without asking** — clearing the squad or the field, loading the sample XI,
+  auto-arranging and applying a ready-made field all confirm first, saying exactly what will be
+  lost.
 - **Player records** — import a player's career figures from CricClubs and the board will
   suggest who keeps, who catches, who bowls at the death, and how to set a field against an
   opposition batter. Every suggestion carries the figure it rests on.
