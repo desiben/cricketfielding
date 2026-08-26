@@ -1,8 +1,10 @@
 /* Cricket field geometry + standard fielding positions.
    Coordinate space: SVG user units, 1000 x 1140 viewBox.
    All angles are measured from the striker, 0 = straight down the ground
-   (towards the bowler), positive = leg side. Coordinates below are for a
-   right-handed batter, i.e. the off side is on the LEFT of the diagram. */
+   (towards the bowler), positive = leg side. The drawing is a plan view from
+   above with the bowler at the top, so for a right-handed batter the off side
+   falls on the RIGHT of the ground and the leg side on the left — the mirror of
+   what you see on television from behind the bowler's arm. */
 
 const FIELD = {
   W: 1000,
@@ -33,7 +35,7 @@ function clampToField(x, y, margin) {
 /* Convert an angle/distance (from the striker) into field coordinates. */
 function polar(angleDeg, yards) {
   const rad = (angleDeg * Math.PI) / 180;
-  const x = FIELD.STRIKER_X + yards * FIELD.YARD * Math.sin(rad);
+  const x = FIELD.STRIKER_X - yards * FIELD.YARD * Math.sin(rad);
   const y = FIELD.STRIKER_Y - yards * FIELD.YARD * Math.cos(rad);
   return clampToField(x, y, FIELD.R - 26);
 }
@@ -115,7 +117,7 @@ function nearestPositionName(x, y, hand) {
 
 /* Which half of the ground a point sits in. */
 function sideOf(x, hand) {
-  const off = hand === 'l' ? x > FIELD.CX : x < FIELD.CX;
+  const off = hand === 'r' ? x > FIELD.CX : x < FIELD.CX;
   return off ? 'off' : 'leg';
 }
 

@@ -20,11 +20,10 @@ static files on any host.
   one. It is off by default.
 - **Right- or left-hand batter** — the whole set of named positions mirrors, and
   `Mirror field` flips the players you have already placed.
-- **Either end of the ground** — `Flip ends` turns the ground end for end so the
-  batter is at the top, the way you would see it from behind the striker. It is a
-  half-turn of the view only: every player keeps their position and its name, the
-  off and leg sides simply change hands. The orientation travels with the link
-  and appears in the saved image.
+- **Turn the ground** — `Rotate 90°` steps through quarter turns, so the pitch can
+  run across the page or the batter's end can sit at the top. It turns the view
+  only: every player keeps their spot and its name. The orientation travels with
+  the link and appears in the saved image.
 - **Ready-made fields** — ODI powerplay, ODI middle overs, death overs, Test
   attacking with three slips, and a T20 spin field.
 - **Live checks** — how many fielders are on the field, inside and outside the
@@ -94,9 +93,14 @@ link the app produces points at that address.
 | `js/export.js` | Turns that SVG into a PNG |
 | `js/app.js` | Squad, sharing, buttons — everything wired together |
 
-The ground is drawn in a 1000 × 1140 coordinate space: the boundary is treated as
+The ground is a plan view from above with the bowler running in from the top, so
+for a right-hander the off side falls on the right of the drawing and the leg
+side on the left — the mirror of the view from behind the bowler's arm. It is
+drawn in a 1000 × 1140 coordinate space: the boundary is treated as
 65 yards from the middle, the 30-yard circle is two semicircles around the stumps,
 and fielding positions are stored as an angle and a distance from the striker so
-they mirror correctly for a left-hander. Fielder coordinates are rounded to whole
-units and the squad is referenced by index before the setup is base64url-encoded
+they mirror correctly for a left-hander. Rotation is applied only when drawing —
+stored coordinates always have the batter at the bottom, and a pointer position
+is turned back before it is stored, so names never depend on the orientation.
+Fielder coordinates are rounded to whole units and the squad is referenced by index before the setup is base64url-encoded
 into the link, which keeps a full eleven-player setup at roughly 500 characters.

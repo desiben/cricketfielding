@@ -15,7 +15,7 @@ function defaultState() {
   return {
     title: 'Fielding setup',
     hand: 'r',
-    flip: false,   // true = the ground is viewed from the batter's end
+    rot: 0,        // quarter turns of the ground, in degrees: 0, 90, 180, 270
     bowlingTo: '',
     notes: '',
     squad: [],
@@ -65,7 +65,7 @@ function encodeState(state, mode) {
     m: mode === MODES.ADMIN ? 'a' : mode === MODES.EDIT ? 'e' : 'v',
     t: state.title || '',
     h: state.hand || 'r',
-    p: state.flip ? 1 : 0,
+    r: Number(state.rot) || 0,
     o: state.bowlingTo || '',
     n: state.notes || '',
     s: state.squad.map(function (p) { return p.name; }),
@@ -86,7 +86,8 @@ function decodeState(encoded) {
   const state = defaultState();
   state.title = raw.t || 'Fielding setup';
   state.hand = raw.h === 'l' ? 'l' : 'r';
-  state.flip = raw.p === 1;
+  // raw.p is the earlier half-turn flag, kept so older links still open.
+  state.rot = Number(raw.r) || (raw.p === 1 ? 180 : 0);
   state.bowlingTo = raw.o || '';
   state.notes = raw.n || '';
   state.squad = (raw.s || []).map(function (name, i) {

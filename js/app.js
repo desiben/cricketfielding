@@ -2,6 +2,13 @@
 
 (function () {
   const MAX_ON_FIELD = 11;
+  const ROTATION_NOTE = {
+    0: 'Bowling from the top of the ground.',
+    90: "Turned a quarter — bowler's end on the right.",
+    180: "Turned half way — looking from the batter's end.",
+    270: "Turned a quarter — bowler's end on the left.",
+  };
+
   const AUTO_ORDER = ['keeper', 'bowlerend', 'slip1', 'point', 'cover', 'midoff',
     'midon', 'midwicket', 'squareleg', 'fineleg', 'thirdman', 'deepmidwicket',
     'deepcover', 'longoff', 'longon', 'gully', 'backwardpoint', 'extracover'];
@@ -269,8 +276,7 @@
 
     $('btnAuto').disabled = !canEdit();
     $('btnFlip').disabled = !canEdit();
-    $('btnFlipEnds').disabled = !canEdit();
-    $('btnFlipEnds').textContent = state.flip ? 'Batter at top' : 'Flip ends';
+    $('btnRotate').disabled = !canEdit();
     $('btnClearField').disabled = !canEdit();
     $('squadHint').textContent = canEdit()
       ? 'Tap a player, then tap the ground to place them. Drag any fielder to move.'
@@ -632,11 +638,11 @@
       commit();
     });
 
-    $('btnFlipEnds').addEventListener('click', function () {
+    $('btnRotate').addEventListener('click', function () {
       if (!canEdit()) return;
-      state.flip = !state.flip;
+      state.rot = ((Number(state.rot) || 0) + 90) % 360;
       commit();
-      toast(state.flip ? 'Looking from the batter\'s end.' : 'Looking from the bowler\'s end.');
+      toast(ROTATION_NOTE[state.rot]);
     });
 
     $('btnClearField').addEventListener('click', function () {
