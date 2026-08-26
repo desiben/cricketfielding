@@ -266,6 +266,266 @@
     commit();
   }
 
+
+  /* ---------------------------------------------------------------- records */
+
+  let pendingRecord = null;
+
+  function showDialog(dlg) {
+    if (typeof dlg.showModal === 'function') dlg.showModal();
+    else dlg.setAttribute('open', '');
+  }
+
+  function closeDialog(dlg) {
+    if (typeof dlg.close === 'function') dlg.close();
+    else dlg.removeAttribute('open');
+  }
+
+  function fig(label, value) {
+    return '<div class="fig"><b>' + value + '</b><span>' + label + '</span></div>';
+  }
+
+  /* 136.83 balls-over-six is 136 overs and 5 balls, which is written 136.5. */
+  function oversText(overs) {
+    if (overs == null || !isFinite(overs)) return '—';
+    const balls = Math.round(overs * 6);
+    return Math.floor(balls / 6) + '.' + (balls % 6);
+  }
+
+  function round(n, places) {
+    if (n == null || !isFinite(n)) return '—';
+    const p = Math.pow(10, places == null ? 1 : places);
+    return String(Math.round(n * p) / p);
+  }
+
+  function renderRecords() {
+    const known = state.squad.filter(function (p) { return statsFor(p.name); }).length;
+    $('recordsCount').textContent = state.squad.length
+      ? known + ' of ' + state.squad.length
+      : 'no squad yet';
+  }
+
+  function openImport() {
+    pendingRecord = null;
+    $('statsPaste').value = '';
+    $('statsMsg').textContent = '';
+    $('statsPreview').hidden = true;
+    $('scoutRead').hidden = true;
+    showDialog($('statsDlg'));
+    $('statsPaste').focus();
+  }
+
+  /* Pick the squad player whose name is closest to the record's. */
+  function bestMatch(name) {
+    const key = statsKey(name);
+    let best = null;
+    state.squad.forEach(function (p) {
+      const k = statsKey(p.name);
+      if (!k || !key) return;
+      const score = k === key ? 3
+        : key.indexOf(k) > -1 || k.indexOf(key) > -1 ? 2
+        : k.slice(0, 4) === key.slice(0, 4) ? 1 : 0;
+      if (score && (!best || score > best.score)) best = { player: p, score: score };
+    });
+    return best ? best.player : null;
+  }
+
+  function showPreview(record) {
+    const d = deriveStats(record);
+    $('previewName').textContent = record.name || 'Unnamed player';
+    const bits = [];
+    if (record.role) bits.push(record.role);
+    if (record.battingStyle) bits.push(record.battingStyle);
+    if (record.bowlingStyle) bits.push(record.bowlingStyle);
+    if (record.leagues.length) bits.push(record.leagues.length + ' leagues');
+    $('previewLine').textContent = bits.join(' · ');
+
+    $('previewFigures').innerHTML = [
+      fig('matches', record.mat),
+      fig('runs', record.runs),
+      fig('strike rate', round(d.strikeRate)),
+      fig('wickets', record.wkts),
+      fig('catches', record.catches),
+    ].join('');
+
+    const select = $('statsAttach');
+    select.innerHTML = '';
+    if (!state.squad.length) {
+      select.innerHTML = '<option value="">add players to the squad first</option>';
+      $('btnSaveStats').disabled = true;
+    } else {
+      $('btnSaveStats').disabled = false;
+      const match = bestMatch(record.name);
+      state.squad.forEach(function (p) {
+        const option = document.createElement('option');
+        option.value = p.id;
+        option.textContent = p.name;
+        if (match && match.id === p.id) option.selected = true;
+        select.appendChild(option);
+      });
+    }
+    $('statsPreview').hidden = false;
+  }
+
+  function readPaste() {
+    const result = readPastedRecord($('statsPaste').value);
+    if (result.error) {
+      $('statsMsg').textContent = result.error;
+      $('statsPreview').hidden = true;
+      return;
+    }
+    pendingRecord = result.record;
+    $('statsMsg').textContent = 'Read from ' + result.via + '.';
+    showPreview(pendingRecord);
+  }
+
+  function saveRecordToPlayer() {
+    if (!pendingRecord) return;
+    const player = playerById($('statsAttach').value);
+    if (!player) return;
+    saveStatsFor(player.name, pendingRecord);
+    toast(pendingRecord.name + "'s record saved to " + player.name + '.');
+    closeDialog($('statsDlg'));
+    render();
+  }
+
+  function scoutBatter() {
+    if (!pendingRecord) return;
+    const read = readBatter(pendingRecord);
+    const box = $('scoutRead');
+    const hand = /left/i.test(pendingRecord.battingStyle || '') ? 'l' : 'r';
+    box.innerHTML = '<h3>' + (pendingRecord.name || 'This batter') + ' — ' + read.shape + '</h3>' +
+      '<ul>' + read.notes.map(function (n) { return '<li>' + n + '</li>'; }).join('') + '</ul>' +
+      '<p class="hint">' + read.unknown + '</p>';
+
+    const apply = document.createElement('button');
+    apply.className = 'btn small';
+    apply.type = 'button';
+    apply.textContent = 'Set this field';
+    apply.addEventListener('click', function () {
+      const template = TEMPLATES.find(function (t) { return t.id === templateForRead(read); });
+      state.hand = hand;
+      syncInputs();
+      if (template) applyTemplate(template);
+      else commit();
+      closeDialog($('statsDlg'));
+    });
+    box.appendChild(apply);
+    box.hidden = false;
+  }
+
+  function openPlayerCard(player) {
+    const record = statsFor(player.name);
+    if (!record) return;
+    const d = deriveStats(record);
+    const rows = record.leagues.filter(function (L) { return L.mat; }).map(function (L) {
+      return '<tr><td>' + L.league + '</td><td>' + L.mat + '</td><td>' + L.runs +
+        '</td><td>' + L.wkts + '</td><td>' + L.catches + '</td></tr>';
+    }).join('');
+
+    $('cardBody').innerHTML =
+      '<h2>' + player.name + '</h2>' +
+      '<p class="hint">' + [record.role, record.battingStyle, record.bowlingStyle]
+        .filter(Boolean).join(' · ') + '</p>' +
+      '<div class="figures">' +
+        fig('matches', record.mat) +
+        fig('runs', record.runs) +
+        fig('average', round(d.battingAvg, 2)) +
+        fig('strike rate', round(d.strikeRate)) +
+        fig('wickets', record.wkts) +
+        fig('economy', round(d.economy, 2)) +
+        fig('catches', record.catches) +
+        fig('catches a match', round(d.catchesPerMatch, 2)) +
+      '</div>' +
+      (rows ? '<div class="tablewrap"><table><thead><tr><th>League</th><th>Mat</th>' +
+        '<th>Runs</th><th>Wkts</th><th>Ct</th></tr></thead><tbody>' + rows +
+        '</tbody></table></div>' : '') +
+      '<p class="hint">From ' + (record.url || 'a pasted page') + ', read ' + record.updated +
+      '. Kept on this device only.</p>';
+
+    const remove = document.createElement('button');
+    remove.className = 'btn small ghost danger';
+    remove.type = 'button';
+    remove.textContent = 'Forget this record';
+    remove.addEventListener('click', function () {
+      forgetStatsFor(player.name);
+      closeDialog($('cardDlg'));
+      render();
+    });
+    $('cardBody').appendChild(remove);
+    showDialog($('cardDlg'));
+  }
+
+  function line(label, entry, detail) {
+    if (!entry) return '';
+    return '<li><span class="who">' + entry.player.name + '</span>' +
+      '<span class="what">' + label + '</span>' +
+      '<span class="why">' + detail + '</span></li>';
+  }
+
+  function showSuggestions() {
+    const s = suggestRoles(state.squad);
+    const box = $('suggestions');
+    if (!s.keeper && !s.death && !s.strike) {
+      box.innerHTML = '<p class="hint">No records yet — import a player first.</p>';
+      box.hidden = false;
+      return;
+    }
+
+    const catchers = s.catchers.map(function (e) {
+      return line('close catcher', e, round(e.derived.catchesPerMatch, 2) + ' catches a match, ' +
+        e.record.catches + ' in ' + e.record.mat);
+    }).join('');
+
+    box.innerHTML = '<ul class="suggest">' +
+      line('wicketkeeper', s.keeper, s.keeper ? round(s.keeper.derived.catchesPerMatch, 2) +
+        ' catches a match, ' + s.keeper.record.catches + ' in ' + s.keeper.record.mat : '') +
+      catchers +
+      line('death overs', s.death, s.death ? 'economy ' + round(s.death.derived.economy, 2) +
+        ' over ' + oversText(s.death.derived.overs) + ' overs' : '') +
+      line('strike bowler', s.strike, s.strike && s.strike.derived.bowlingSR
+        ? 'a wicket every ' + round(s.strike.derived.bowlingSR) + ' balls' : '') +
+      '</ul>' +
+      '<p class="hint">Catches count where a player has fielded, not how good their hands are, and ' +
+      'nothing here knows who is quick or who has an arm.' +
+      (s.missing ? ' No record for ' + s.missing + ' of the squad.' : '') + '</p>';
+
+    const apply = document.createElement('button');
+    apply.className = 'btn small';
+    apply.type = 'button';
+    apply.textContent = 'Put the catchers in';
+    apply.addEventListener('click', function () { applyCatchers(s); });
+    box.appendChild(apply);
+    box.hidden = false;
+  }
+
+  /* Places the keeper and the next best pair of hands, and leaves the rest of
+     the field alone — the records do not support any more than that. */
+  function applyCatchers(s) {
+    if (!canEdit() || !s.keeper) return;
+    const spots = positionsFor(state.hand, state.end);
+    const put = function (playerId, spotId, role) {
+      const spot = spots.find(function (x) { return x.id === spotId; });
+      if (!spot) return;
+      const at = fielderIndexOf(playerId);
+      if (at >= 0) {
+        state.fielders[at].x = spot.x;
+        state.fielders[at].y = spot.y;
+        state.fielders[at].role = role;
+      } else if (state.fielders.length < MAX_ON_FIELD) {
+        state.fielders.push({ pid: playerId, x: spot.x, y: spot.y, role: role });
+      }
+    };
+    state.fielders.forEach(function (f) { if (f.role === 'k') f.role = 'f'; });
+    put(s.keeper.player.id, 'keeper', 'k');
+    ['slip1', 'slip2', 'gully'].forEach(function (spotId, i) {
+      if (s.catchers[i]) put(s.catchers[i].player.id, spotId, 'f');
+    });
+    selectedFielderIndex = -1;
+    commit();
+    toast('Keeper and catchers placed.');
+  }
+
   /* --------------------------------------------------------------- rendering */
 
   function syncInputs() {
@@ -390,6 +650,16 @@
         li.appendChild(toggle);
       }
 
+      if (isAdmin() && statsFor(player.name)) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'iconbtn rec';
+        card.title = 'Career record';
+        card.textContent = 'i';
+        card.addEventListener('click', function () { openPlayerCard(player); });
+        li.appendChild(card);
+      }
+
       if (isAdmin()) {
         const rename = document.createElement('button');
         rename.type = 'button';
@@ -399,7 +669,13 @@
         rename.addEventListener('click', function () {
           const next = prompt('Player name', player.name);
           if (next && next.trim()) {
+            const was = player.name;
+            const record = statsFor(was);
             player.name = next.trim().slice(0, 24);
+            if (record) {
+              forgetStatsFor(was);
+              saveStatsFor(player.name, record);
+            }
             commit();
           }
         });
@@ -573,6 +849,7 @@
   function render() {
     renderMode();
     renderSquad();
+    renderRecords();
     renderSaved();
     renderBoard();
     renderStats();
@@ -585,9 +862,7 @@
     $('linkView').value = buildLink(state, MODES.VIEW);
     $('linkEdit').value = buildLink(state, MODES.EDIT);
     $('linkAdmin').value = buildLink(state, MODES.ADMIN);
-    const dlg = $('shareDlg');
-    if (typeof dlg.showModal === 'function') dlg.showModal();
-    else dlg.setAttribute('open', '');
+    showDialog($('shareDlg'));
   }
 
   function copyText(text) {
@@ -734,6 +1009,14 @@
       safeSet(THEME_KEY, themeChoice);
       applyTheme(true);
     });
+
+    $('btnImportStats').addEventListener('click', openImport);
+    $('btnReadStats').addEventListener('click', readPaste);
+    $('btnSaveStats').addEventListener('click', saveRecordToPlayer);
+    $('btnScout').addEventListener('click', scoutBatter);
+    $('btnSuggest').addEventListener('click', showSuggestions);
+    $('btnCloseStats').addEventListener('click', function () { closeDialog($('statsDlg')); });
+    $('btnCloseCard').addEventListener('click', function () { closeDialog($('cardDlg')); });
 
     $('btnShare').addEventListener('click', openShare);
 

@@ -76,6 +76,17 @@
       </div>
     </section>
 
+    <section class="card admin-only" id="recordsCard">
+      <h2>Player records <span id="recordsCount" class="count"></span></h2>
+      <p class="hint">Career figures from CricClubs. They stay on this device and never travel in
+        a shared link.</p>
+      <div class="row wrap">
+        <button id="btnImportStats" class="btn small" type="button">Import a player</button>
+        <button id="btnSuggest" class="btn small ghost" type="button">Suggest roles</button>
+      </div>
+      <div id="suggestions" class="suggestions" hidden></div>
+    </section>
+
     <section class="card">
       <h2>Ready-made fields</h2>
       <ul id="templateList" class="templates"></ul>
@@ -183,10 +194,64 @@
   </form>
 </dialog>
 
+<dialog id="statsDlg" class="dialog">
+  <h2>Import a player record</h2>
+  <p class="hint">Click the bookmarklet on a CricClubs profile and paste here. Copying the profile
+    page itself — select all, copy — works too; the box reads either.
+    <a href="tools/bookmarklet.html" target="_blank" rel="noopener">Get the bookmarklet</a>.</p>
+
+  <textarea id="statsPaste" rows="5" placeholder="Paste the record here"></textarea>
+  <div class="row">
+    <button id="btnReadStats" class="btn" type="button">Read it</button>
+    <span id="statsMsg" class="hint"></span>
+  </div>
+
+  <div id="statsPreview" class="preview" hidden>
+    <h3 id="previewName"></h3>
+    <p id="previewLine" class="hint"></p>
+    <div id="previewFigures" class="figures"></div>
+
+    <div class="sharerow">
+      <div>
+        <strong>One of ours</strong>
+        <span class="hint">Attach the record to a squad player.</span>
+      </div>
+      <div class="row">
+        <select id="statsAttach" class="select"></select>
+        <button id="btnSaveStats" class="btn small" type="button">Save</button>
+      </div>
+    </div>
+
+    <div class="sharerow">
+      <div>
+        <strong>One of theirs</strong>
+        <span class="hint">Read the batter and set a field to bowl at them.</span>
+      </div>
+      <div class="row">
+        <button id="btnScout" class="btn small" type="button">Scout this batter</button>
+      </div>
+    </div>
+
+    <div id="scoutRead" class="scout" hidden></div>
+  </div>
+
+  <div class="row end">
+    <button id="btnCloseStats" class="btn" type="button">Done</button>
+  </div>
+</dialog>
+
+<dialog id="cardDlg" class="dialog">
+  <div id="cardBody"></div>
+  <div class="row end">
+    <button id="btnCloseCard" class="btn" type="button">Close</button>
+  </div>
+</dialog>
+
 <div id="toast" class="toast" hidden></div>
 
 <script src="js/positions.js"></script>
 <script src="js/state.js"></script>
+<script src="js/stats.js"></script>
 <script src="js/field.js"></script>
 <script src="js/export.js"></script>
 <script src="js/app.js"></script>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Get the CricClubs bookmarklet · Cricket Fielding Board</title>
+<link rel="stylesheet" href="../assets/styles.css">
+<style>
+  .doc { max-width: 720px; margin: 0 auto; padding: 32px 20px 80px; }
+  .doc h1 { font-size: 26px; margin: 0 0 8px; letter-spacing: -0.02em; }
+  .doc h2 { font-size: 15px; margin: 28px 0 8px; }
+  .doc p, .doc li { color: var(--muted); font-size: 15px; line-height: 1.6; }
+  .doc strong { color: var(--text); }
+  .doc ol { padding-left: 20px; display: grid; gap: 8px; }
+  .grabber {
+    display: inline-block;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 700;
+    font-size: 15px;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: grab;
+  }
+  .dragbox {
+    border: 1px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 22px;
+    text-align: center;
+    margin: 14px 0;
+    background: var(--panel);
+  }
+  .doc code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; }
+  textarea.src {
+    width: 100%; height: 90px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px; background: var(--input-bg); color: var(--text);
+    border: 1px solid var(--line); border-radius: 10px; padding: 10px;
+  }
+  .back { font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="doc">
+  <p class="back"><a href="../index.html">&larr; Back to the board</a></p>
+  <h1>Get the CricClubs bookmarklet</h1>
+  <p>A bookmark that reads a player's CricClubs profile and copies their record, ready to paste
+    into the fielding board. It reads the page you are already looking at — nothing is sent
+    anywhere, and it works on pages that need you to be logged in.</p>
+
+  <div class="dragbox">
+    <a class="grabber" href="javascript:(function%20()%20%7B%20function%20txt(el)%20%7B%20return%20((el%20%26%26%20el.textContent)%20%7C%7C%20'').replace(%2F%5Cs%2B%2Fg%2C%20'%20').trim()%3B%20%7D%20function%20num(v)%20%7B%20var%20n%20%3D%20parseFloat(String(v).replace(%2F%2C%2Fg%2C%20''))%3B%20return%20isFinite(n)%20%3F%20n%20%3A%200%3B%20%7D%20function%20balls(v)%20%7B%20var%20p%20%3D%20String(v).split('.')%3B%20return%20num(p%5B0%5D)%20*%206%20%2B%20num(p%5B1%5D%20%7C%7C%200)%3B%20%7D%20function%20grab()%20%7B%20var%20player%20%3D%20%7B%20name%3A%20txt(document.querySelector('h1'))%20%7C%7C%20document.title.split('-')%5B0%5D.trim()%2C%20url%3A%20location.href%2C%20grabbed%3A%20new%20Date().toISOString().slice(0%2C%2010)%2C%20%7D%3B%20var%20keys%20%3D%20%2F%5E(CC%20Player%20ID%7CCurrent%20Team%7CTeams%7CPlaying%20Role%7CBatting%20Style%7CBowling%20Style)%5Cs*%3A%5Cs*(.%2B)%24%2F%3B%20Array.prototype.forEach.call(document.querySelectorAll('div%2Cp%2Cli%2Cspan')%2C%20function%20(el)%20%7B%20if%20(el.children.length%20%3E%201)%20return%3B%20var%20m%20%3D%20txt(el).match(keys)%3B%20if%20(m%20%26%26%20!player%5Bm%5B1%5D%5D)%20player%5Bm%5B1%5D%5D%20%3D%20m%5B2%5D%3B%20%7D)%3B%20var%20leagues%20%3D%20Array.prototype.map.call(%20document.querySelectorAll('li.resp-tab-item.hor_1')%2C%20txt)%3B%20var%20tables%20%3D%20%5B%5D%3B%20Array.prototype.forEach.call(document.querySelectorAll('table')%2C%20function%20(tb)%20%7B%20var%20rows%20%3D%20Array.prototype.map.call(tb.rows%2C%20function%20(r)%20%7B%20return%20Array.prototype.map.call(r.cells%2C%20txt)%3B%20%7D)%3B%20if%20(rows.length%20%3C%202%20%7C%7C%20rows%5B0%5D.length%20%3C%208)%20return%3B%20var%20head%20%3D%20rows%5B0%5D%3B%20var%20kind%20%3D%20head.indexOf('HS')%20%3E%20-1%20%3F%20'bat'%20%3A%20head.indexOf('Catches')%20%3E%20-1%20%3F%20'bowl'%20%3A%20null%3B%20if%20(!kind)%20return%3B%20function%20at(n)%20%7B%20return%20head.indexOf(n)%3B%20%7D%20var%20data%20%3D%20rows.slice(1).filter(function%20(r)%20%7B%20return%20r.length%20%3D%3D%3D%20head.length%20%26%26%20r%5B0%5D%20%26%26%20!%2FView%20statistics%7CLoading%2Fi.test(r%5B0%5D)%3B%20%7D)%3B%20tables.push(%7B%20kind%3A%20kind%2C%20rows%3A%20data.map(function%20(r)%20%7B%20return%20kind%20%3D%3D%3D%20'bat'%20%3F%20%7B%20format%3A%20r%5B0%5D%2C%20mat%3A%20num(r%5Bat('Mat')%5D)%2C%20inns%3A%20num(r%5Bat('Inns')%5D)%2C%20no%3A%20num(r%5Bat('NO')%5D)%2C%20runs%3A%20num(r%5Bat('Runs')%5D)%2C%20balls%3A%20num(r%5Bat('Balls')%5D)%2C%20hs%3A%20num(r%5Bat('HS')%5D)%2C%20hundreds%3A%20num(r%5Bat(%22100's%22)%5D)%2C%20fifties%3A%20num(r%5Bat(%2250's%22)%5D)%2C%20ducks%3A%20num(r%5Bat(%220's%22)%5D)%2C%20fours%3A%20num(r%5Bat(%224's%22)%5D)%2C%20sixes%3A%20num(r%5Bat(%226's%22)%5D)%2C%20%7D%20%3A%20%7B%20format%3A%20r%5B0%5D%2C%20mat%3A%20num(r%5Bat('Mat')%5D)%2C%20inns%3A%20num(r%5Bat('Inns')%5D)%2C%20ballsBowled%3A%20balls(r%5Bat('Overs')%5D)%2C%20conceded%3A%20num(r%5Bat('Runs')%5D)%2C%20wkts%3A%20num(r%5Bat('Wkts')%5D)%2C%20best%3A%20r%5Bat('BBF')%5D%2C%20maidens%3A%20num(r%5Bat('Mdns')%5D)%2C%20wides%3A%20num(r%5Bat('Wides')%5D)%2C%20catches%3A%20num(r%5Bat('Catches')%5D)%2C%20%7D%3B%20%7D)%2C%20%7D)%3B%20%7D)%3B%20player.leagues%20%3D%20%5B%5D%3B%20for%20(var%20i%20%3D%200%3B%20i%20%2B%201%20%3C%20tables.length%3B%20i%20%2B%3D%202)%20%7B%20player.leagues.push(%7B%20league%3A%20leagues%5Bi%20%2F%202%5D%20%7C%7C%20'League%20'%20%2B%20(i%20%2F%202%20%2B%201)%2C%20batting%3A%20tables%5Bi%5D.rows%2C%20bowling%3A%20tables%5Bi%20%2B%201%5D.rows%2C%20%7D)%3B%20%7D%20player.dismissals%20%3D%20%7B%7D%3B%20Array.prototype.forEach.call(document.querySelectorAll('table')%2C%20function%20(tb)%20%7B%20if%20(Object.keys(player.dismissals).length)%20return%3B%20var%20rows%20%3D%20Array.prototype.map.call(tb.rows%2C%20function%20(r)%20%7B%20return%20Array.prototype.map.call(r.cells%2C%20txt)%3B%20%7D)%3B%20if%20(!rows.length%20%7C%7C%20rows%5B0%5D%5B0%5D%20!%3D%3D%20'Out%20type')%20return%3B%20rows.slice(1).forEach(function%20(r)%20%7B%20player.dismissals%5Br%5B0%5D%5D%20%3D%20num(r%5B1%5D)%3B%20%7D)%3B%20%7D)%3B%20return%20player%3B%20%7D%20var%20player%20%3D%20grab()%3B%20var%20count%20%3D%20(player.leagues%20%7C%7C%20%5B%5D).length%3B%20if%20(!count)%20%7B%20alert('No%20stats%20tables%20found%20here.%5Cn%5CnOpen%20a%20player%20profile%20page%20and%20try%20again.')%3B%20return%3B%20%7D%20var%20json%20%3D%20JSON.stringify(player)%3B%20var%20message%20%3D%20'Copied%20'%20%2B%20player.name%20%2B%20'%20%E2%80%94%20'%20%2B%20count%20%2B%20(count%20%3D%3D%3D%201%20%3F%20'%20league'%20%3A%20'%20leagues')%20%2B%20'.%5Cn%5CnNow%20paste%20it%20into%20the%20fielding%20board.'%3B%20function%20byHand()%20%7B%20var%20box%20%3D%20document.createElement('textarea')%3B%20box.value%20%3D%20json%3B%20box.style.position%20%3D%20'fixed'%3B%20box.style.opacity%20%3D%20'0'%3B%20document.body.appendChild(box)%3B%20box.select()%3B%20try%20%7B%20document.execCommand('copy')%3B%20%7D%20catch%20(err)%20%7B%20%7D%20box.remove()%3B%20alert(message)%3B%20%7D%20if%20(navigator.clipboard%20%26%26%20navigator.clipboard.writeText)%20%7B%20navigator.clipboard.writeText(json).then(function%20()%20%7B%20alert(message)%3B%20%7D%2C%20byHand)%3B%20%7D%20else%20%7B%20byHand()%3B%20%7D%20%7D)()%3B">Grab CricClubs stats</a>
+    <p style="margin:12px 0 0">Drag this button onto your bookmarks bar.</p>
+  </div>
+
+  <h2>If you cannot drag it</h2>
+  <ol>
+    <li>Make a new bookmark of any page, then edit it.</li>
+    <li>Name it <strong>Grab CricClubs stats</strong>.</li>
+    <li>Replace its address with the text below.</li>
+  </ol>
+  <textarea class="src" readonly onclick="this.select()">javascript:(function%20()%20%7B%20function%20txt(el)%20%7B%20return%20((el%20%26%26%20el.textContent)%20%7C%7C%20'').replace(%2F%5Cs%2B%2Fg%2C%20'%20').trim()%3B%20%7D%20function%20num(v)%20%7B%20var%20n%20%3D%20parseFloat(String(v).replace(%2F%2C%2Fg%2C%20''))%3B%20return%20isFinite(n)%20%3F%20n%20%3A%200%3B%20%7D%20function%20balls(v)%20%7B%20var%20p%20%3D%20String(v).split('.')%3B%20return%20num(p%5B0%5D)%20*%206%20%2B%20num(p%5B1%5D%20%7C%7C%200)%3B%20%7D%20function%20grab()%20%7B%20var%20player%20%3D%20%7B%20name%3A%20txt(document.querySelector('h1'))%20%7C%7C%20document.title.split('-')%5B0%5D.trim()%2C%20url%3A%20location.href%2C%20grabbed%3A%20new%20Date().toISOString().slice(0%2C%2010)%2C%20%7D%3B%20var%20keys%20%3D%20%2F%5E(CC%20Player%20ID%7CCurrent%20Team%7CTeams%7CPlaying%20Role%7CBatting%20Style%7CBowling%20Style)%5Cs*%3A%5Cs*(.%2B)%24%2F%3B%20Array.prototype.forEach.call(document.querySelectorAll('div%2Cp%2Cli%2Cspan')%2C%20function%20(el)%20%7B%20if%20(el.children.length%20%3E%201)%20return%3B%20var%20m%20%3D%20txt(el).match(keys)%3B%20if%20(m%20%26%26%20!player%5Bm%5B1%5D%5D)%20player%5Bm%5B1%5D%5D%20%3D%20m%5B2%5D%3B%20%7D)%3B%20var%20leagues%20%3D%20Array.prototype.map.call(%20document.querySelectorAll('li.resp-tab-item.hor_1')%2C%20txt)%3B%20var%20tables%20%3D%20%5B%5D%3B%20Array.prototype.forEach.call(document.querySelectorAll('table')%2C%20function%20(tb)%20%7B%20var%20rows%20%3D%20Array.prototype.map.call(tb.rows%2C%20function%20(r)%20%7B%20return%20Array.prototype.map.call(r.cells%2C%20txt)%3B%20%7D)%3B%20if%20(rows.length%20%3C%202%20%7C%7C%20rows%5B0%5D.length%20%3C%208)%20return%3B%20var%20head%20%3D%20rows%5B0%5D%3B%20var%20kind%20%3D%20head.indexOf('HS')%20%3E%20-1%20%3F%20'bat'%20%3A%20head.indexOf('Catches')%20%3E%20-1%20%3F%20'bowl'%20%3A%20null%3B%20if%20(!kind)%20return%3B%20function%20at(n)%20%7B%20return%20head.indexOf(n)%3B%20%7D%20var%20data%20%3D%20rows.slice(1).filter(function%20(r)%20%7B%20return%20r.length%20%3D%3D%3D%20head.length%20%26%26%20r%5B0%5D%20%26%26%20!%2FView%20statistics%7CLoading%2Fi.test(r%5B0%5D)%3B%20%7D)%3B%20tables.push(%7B%20kind%3A%20kind%2C%20rows%3A%20data.map(function%20(r)%20%7B%20return%20kind%20%3D%3D%3D%20'bat'%20%3F%20%7B%20format%3A%20r%5B0%5D%2C%20mat%3A%20num(r%5Bat('Mat')%5D)%2C%20inns%3A%20num(r%5Bat('Inns')%5D)%2C%20no%3A%20num(r%5Bat('NO')%5D)%2C%20runs%3A%20num(r%5Bat('Runs')%5D)%2C%20balls%3A%20num(r%5Bat('Balls')%5D)%2C%20hs%3A%20num(r%5Bat('HS')%5D)%2C%20hundreds%3A%20num(r%5Bat(%22100's%22)%5D)%2C%20fifties%3A%20num(r%5Bat(%2250's%22)%5D)%2C%20ducks%3A%20num(r%5Bat(%220's%22)%5D)%2C%20fours%3A%20num(r%5Bat(%224's%22)%5D)%2C%20sixes%3A%20num(r%5Bat(%226's%22)%5D)%2C%20%7D%20%3A%20%7B%20format%3A%20r%5B0%5D%2C%20mat%3A%20num(r%5Bat('Mat')%5D)%2C%20inns%3A%20num(r%5Bat('Inns')%5D)%2C%20ballsBowled%3A%20balls(r%5Bat('Overs')%5D)%2C%20conceded%3A%20num(r%5Bat('Runs')%5D)%2C%20wkts%3A%20num(r%5Bat('Wkts')%5D)%2C%20best%3A%20r%5Bat('BBF')%5D%2C%20maidens%3A%20num(r%5Bat('Mdns')%5D)%2C%20wides%3A%20num(r%5Bat('Wides')%5D)%2C%20catches%3A%20num(r%5Bat('Catches')%5D)%2C%20%7D%3B%20%7D)%2C%20%7D)%3B%20%7D)%3B%20player.leagues%20%3D%20%5B%5D%3B%20for%20(var%20i%20%3D%200%3B%20i%20%2B%201%20%3C%20tables.length%3B%20i%20%2B%3D%202)%20%7B%20player.leagues.push(%7B%20league%3A%20leagues%5Bi%20%2F%202%5D%20%7C%7C%20'League%20'%20%2B%20(i%20%2F%202%20%2B%201)%2C%20batting%3A%20tables%5Bi%5D.rows%2C%20bowling%3A%20tables%5Bi%20%2B%201%5D.rows%2C%20%7D)%3B%20%7D%20player.dismissals%20%3D%20%7B%7D%3B%20Array.prototype.forEach.call(document.querySelectorAll('table')%2C%20function%20(tb)%20%7B%20if%20(Object.keys(player.dismissals).length)%20return%3B%20var%20rows%20%3D%20Array.prototype.map.call(tb.rows%2C%20function%20(r)%20%7B%20return%20Array.prototype.map.call(r.cells%2C%20txt)%3B%20%7D)%3B%20if%20(!rows.length%20%7C%7C%20rows%5B0%5D%5B0%5D%20!%3D%3D%20'Out%20type')%20return%3B%20rows.slice(1).forEach(function%20(r)%20%7B%20player.dismissals%5Br%5B0%5D%5D%20%3D%20num(r%5B1%5D)%3B%20%7D)%3B%20%7D)%3B%20return%20player%3B%20%7D%20var%20player%20%3D%20grab()%3B%20var%20count%20%3D%20(player.leagues%20%7C%7C%20%5B%5D).length%3B%20if%20(!count)%20%7B%20alert('No%20stats%20tables%20found%20here.%5Cn%5CnOpen%20a%20player%20profile%20page%20and%20try%20again.')%3B%20return%3B%20%7D%20var%20json%20%3D%20JSON.stringify(player)%3B%20var%20message%20%3D%20'Copied%20'%20%2B%20player.name%20%2B%20'%20%E2%80%94%20'%20%2B%20count%20%2B%20(count%20%3D%3D%3D%201%20%3F%20'%20league'%20%3A%20'%20leagues')%20%2B%20'.%5Cn%5CnNow%20paste%20it%20into%20the%20fielding%20board.'%3B%20function%20byHand()%20%7B%20var%20box%20%3D%20document.createElement('textarea')%3B%20box.value%20%3D%20json%3B%20box.style.position%20%3D%20'fixed'%3B%20box.style.opacity%20%3D%20'0'%3B%20document.body.appendChild(box)%3B%20box.select()%3B%20try%20%7B%20document.execCommand('copy')%3B%20%7D%20catch%20(err)%20%7B%20%7D%20box.remove()%3B%20alert(message)%3B%20%7D%20if%20(navigator.clipboard%20%26%26%20navigator.clipboard.writeText)%20%7B%20navigator.clipboard.writeText(json).then(function%20()%20%7B%20alert(message)%3B%20%7D%2C%20byHand)%3B%20%7D%20else%20%7B%20byHand()%3B%20%7D%20%7D)()%3B</textarea>
+
+  <h2>Using it</h2>
+  <ol>
+    <li>Open a player's CricClubs profile.</li>
+    <li>Click the bookmark. It confirms whose record it took.</li>
+    <li>In the board, open <strong>Player records &rarr; Import a player</strong> and paste.</li>
+  </ol>
+  <p>One click takes every league on the profile, not just the tab on screen. If the button ever
+    stops working — CricClubs redesigning their pages would do it — copy the profile page itself
+    with &#8984;A then &#8984;C and paste that into the same box instead. The board reads both.</p>
+
+  <h2>On a phone</h2>
+  <p>Bookmarklets are awkward on mobile: iOS wants you to save a bookmark and then edit its
+    address, Android wants you to type the bookmark's name into the address bar. Importing records
+    is a once-a-season job, so it is easier on a laptop. The board itself stays made for the
+    boundary rope.</p>
+</div>
+</body>
+</html>

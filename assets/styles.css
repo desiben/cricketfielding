@@ -538,6 +538,121 @@ input:disabled, textarea:disabled {
   line-height: 1.5;
 }
 
+/* ----------------------------------------------------------------- records */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.figures .fig {
+  border: 1px solid var(--line);
+  background: var(--row-bg);
+  border-radius: 10px;
+  padding: 9px 11px;
+}
+
+.figures .fig b {
+  display: block;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.25;
+}
+
+.figures .fig span {
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.iconbtn.rec {
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1;
+  flex: none;
+}
+
+.suggestions { margin-top: 12px; }
+
+ul.suggest {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+ul.suggest li {
+  border: 1px solid var(--line);
+  background: var(--row-bg);
+  border-radius: 10px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 3px 8px;
+}
+
+ul.suggest .who { font-size: 13.5px; font-weight: 650; }
+
+ul.suggest .what {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: right;
+  align-self: center;
+  white-space: nowrap;
+}
+
+ul.suggest .why { grid-column: 1 / -1; font-size: 12px; color: var(--muted); line-height: 1.45; }
+
+.preview { border-top: 1px solid var(--line); margin-top: 14px; padding-top: 12px; }
+.preview h3 { margin: 0 0 2px; font-size: 17px; }
+
+textarea#statsPaste { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+
+.select {
+  background: var(--input-bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 14px;
+  flex: 1;
+  min-width: 0;
+}
+
+.scout {
+  border: 1px solid var(--accent-line);
+  background: var(--accent-faint);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+
+.scout h3 { margin: 0 0 8px; font-size: 15.5px; }
+.scout ul { margin: 0 0 8px; padding-left: 18px; }
+.scout li { font-size: 13.5px; color: var(--muted); line-height: 1.5; margin-bottom: 5px; }
+.scout .hint { margin: 0 0 10px; }
+
+#cardBody h2 { margin: 0 0 2px; font-size: 21px; }
+#cardBody .tablewrap { margin: 10px 0 12px; }
+#cardBody table { min-width: 380px; font-size: 13.5px; }
+#cardBody td { font-variant-numeric: tabular-nums; }
+
 /* ------------------------------------------------------------------- toast */
 
 .toast {

@@ -42,6 +42,9 @@ static files on any host.
   the counts. `Copy image` puts the same picture on the clipboard where the
   browser supports it.
 - **Save on this device** — keep several named setups in the browser you use.
+- **Player records** — import a player's career figures from CricClubs and the board will
+  suggest who keeps, who catches, who bowls at the death, and how to set a field against an
+  opposition batter. Every suggestion carries the figure it rests on.
 
 ## What people see at the plain address
 
@@ -51,6 +54,30 @@ team. A board you were working on is kept in your own browser and offered back t
 you on a bar above the ground, but it is never restored on its own, and nothing
 is written to storage until you change something. A shared link, which carries a
 setup in its fragment, opens straight into that setup as you would expect.
+
+## Player records from CricClubs
+
+CricClubs has no API, and a browser will not let this site read theirs. So the reading happens
+where the data already is: `tools/bookmarklet.html` gives you a bookmark that runs on a player's
+profile page and copies their record to the clipboard. Paste it into **Player records → Import a
+player**. Copying the profile page itself and pasting that works too — the box reads either.
+
+One click takes every league tab on the profile, not just the one on screen, because they are all
+in the page already. The catches are in there too, tucked into the Catches column of the *bowling*
+table, which is easy to miss by eye.
+
+**What the figures support.** Catches per match rank the squad for the gloves and the cordon.
+Economy and bowling strike rate separate a death bowler from a wicket-taker. For an opposition
+batter, boundary share and strike rate between boundaries say whether to defend the rope or squeeze
+the ring, and the dismissal breakdown says whether catchers earn their place.
+
+**What they don't.** Nothing in a CricClubs profile records *where* a batter scores — there is no
+wagon wheel — so the board will never tell you which side to load. Catches also count where a
+player has been fielding rather than how good their hands are, and small samples at club level are
+mostly noise. Every suggestion in the app shows its sample size for that reason.
+
+Records are kept on your device, keyed to the player's name. They are never written into a shared
+link, so a field plan you send to a teammate carries no one's personal record.
 
 ## Sharing and permissions
 
@@ -109,7 +136,10 @@ link the app produces points at that address.
 | `js/state.js` | The setup model, link encoding/decoding, local storage |
 | `js/field.js` | Draws the ground as an SVG and handles dragging |
 | `js/export.js` | Turns that SVG into a PNG |
+| `js/stats.js` | Player records: reading a paste, the arithmetic, the suggestions |
 | `js/app.js` | Squad, sharing, buttons — everything wired together |
+| `tools/cricclubs-grab.js` | Source of the bookmarklet that reads a CricClubs profile |
+| `tools/bookmarklet.html` | Install page: drag the bookmark, or copy its address |
 
 Beyond the rope there is a strip of outfield, the advertising boards, two tiers
 of seating with aisles between the blocks, four floodlights and a sightscreen at
